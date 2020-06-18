@@ -2,37 +2,39 @@ import java.awt.*;
 import javax.swing.*;
 
 public class HeatmapGUI extends JFrame {
-	private JPanel topPanel,rightPanel,heatmapPanel;
+	private JPanel menuPanel,rightPanel,customSizePanel, filterPanel;
 	private JMenuBar fileMenuBar;
 	private JMenu fileMenu, save,colors;
 	public JMenuItem importFile,savePDF,savePng,nonSynColor,synColor;
 	private HeatmapController localController;
 
+
 	
-	//create the the JFrame
+	//create the JFrame
 	public HeatmapGUI(HeatmapController controller) {
 		localController=controller;
 		setLayout(new BorderLayout());
 		setTitle("COVID-19 Nucleotide Mutations");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setup();
 		this.pack();
 		this.setVisible(true);
 		this.setSize(1500, 800);
-		setup();
-	
 	}
 	
 	//setup method generates the main Panels and the buttons
 	private void setup() {
-		//create three main panels
-		topPanel = new JPanel();
-		topPanel.setLayout(new BorderLayout());
+		// create panels
+		menuPanel = new JPanel();
+		menuPanel.setLayout(new BorderLayout());
 		rightPanel = new JPanel();
-		heatmapPanel = new JPanel();
+		rightPanel.setLayout(new GridLayout(0,1));
+		customSizePanel=new JPanel();
+		filterPanel=new JPanel();
 	
-		//topPanel
-
-		//generate the menuBar and the menus and sub-menus
+		//menuPanel
+		
+		//generate the menuBar,the menus and sub-menus
 		fileMenuBar=new JMenuBar();
 		fileMenu = new JMenu("File");
 		save=new JMenu("Save image as");
@@ -41,7 +43,7 @@ public class HeatmapGUI extends JFrame {
 		//generate the menu items
 		importFile=new JMenuItem("Import .txt file");
 		savePDF=new JMenuItem("PDF");
-		savePng=new JMenuItem("png");
+		savePng=new JMenuItem("png/jpeg");
 		synColor=new JMenuItem("Synonumous mutation");
 		nonSynColor=new JMenuItem("Non-synonumous mutation");
 		
@@ -60,26 +62,53 @@ public class HeatmapGUI extends JFrame {
 		colors.add(nonSynColor);
 		colors.add(synColor);
 		
-		//add menus to the menu bat
+		//add menus to the menubar
 		fileMenuBar.add(fileMenu);
 		fileMenuBar.add(colors);
-		topPanel.add(fileMenuBar,BorderLayout.WEST); //add the menu bar to the topPanel
+		menuPanel.add(fileMenuBar,BorderLayout.WEST);
 
-		//HeatmapPanel
-
-		JScrollPane scrollPane = new JScrollPane(heatmapPanel); //add scrollPanel to the HeatmapPanel
+		//right panel
 		
-		rightPanel.setBackground(Color.yellow);
+		final int pixel_MIN = 1;	//minimum square size
+		final int pixel_MAX = 30;	//maximum square size
+		final int pixel_INIT = 8;    //initial square size
+		
+		//generate JSlider to customize square size
+		JSlider pixelSize = new JSlider(JSlider.HORIZONTAL,pixel_MIN, pixel_MAX, pixel_INIT);
+		pixelSize.addChangeListener(localController);
 
-		//add the main Panels to the JFrame
-		add(topPanel,BorderLayout.NORTH);
-		add(rightPanel,BorderLayout.EAST);
-		add(scrollPane,BorderLayout.CENTER);
+		//Turn on labels at major tick marks.
+		pixelSize.setMajorTickSpacing(9);
+		pixelSize.setMinorTickSpacing(1);
+		pixelSize.setPaintTicks(true);
+		pixelSize.setPaintLabels(true);
+		
+		//create labels for the filters
+		JLabel pixels=new JLabel("Square size");
+		JLabel filters=new JLabel("Filters");
+		
+		//add the JComponents to the corresponding JPanels
+		customSizePanel.add(pixels);
+		customSizePanel.add(pixelSize);
+		rightPanel.add(customSizePanel);
+		filterPanel.add(filters);
+		rightPanel.add(filterPanel);
+		
+		rightPanel.setVisible(false); //set rightPanel not visible 
+		
+		//add the panels to JFrame
+		this.add(menuPanel,BorderLayout.NORTH);
+		this.add(rightPanel,BorderLayout.EAST);
 		
 	}
-
-	//getter for the heatmapPanel to be used in the other classes
-	public JPanel getHeatmapPanel() {
-		return heatmapPanel;
+	
+	//panels' getters to be used in the other classes
+	public JPanel getFilterPanel() {
+		return filterPanel;
 	}
+
+	public JPanel getRightPanel() {
+		return rightPanel;
+	}
+
 }

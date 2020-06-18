@@ -1,6 +1,4 @@
 import java.awt.Component;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Vector;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -18,6 +16,7 @@ public class RegionsComboBox extends JComboBox{
 		
 	}
 	
+	//gets and returns the String of the selected checkedBox
 	public String checkedBox() {
 		Object checked=getSelectedItem();
 		if (checked instanceof JCheckBox) {
@@ -29,13 +28,15 @@ public class RegionsComboBox extends JComboBox{
 		return"";
 		
 	}
-
+	//getter
 	public String getName() {
 		return name;
 	}
 	
 	
 }
+
+// Handles rendering cells in the list using a check box
 class ComboRenderer implements ListCellRenderer{
 	private JLabel label;
 	@Override

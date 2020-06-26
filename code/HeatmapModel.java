@@ -8,8 +8,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Locale;
 import java.util.Scanner;
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
@@ -22,17 +26,20 @@ import com.itextpdf.text.pdf.PdfWriter;
 public class HeatmapModel {
 	private FileReader fr;
 	private int sampleNumber, positionNumber;
+	private LocalDate minPastDate, maxDate;
 	ArrayList<String> genomePosition = new ArrayList<String>();
 	ArrayList<String> tableLine = new ArrayList<String>();
 	ArrayList<String> samples = new ArrayList<String>();
 	ArrayList<String> countries = new ArrayList<String>();
+	ArrayList<String> dates = new ArrayList<String>();
 	ArrayList<ArrayList<String>> table = new ArrayList<ArrayList<String>>();
+	ArrayList<ArrayList<String>> customTable = new ArrayList<ArrayList<String>>();
 
 	// method that creates the file chooser frame and returns the path of the
 	// selected file
 	public String selectFile(HeatmapGUI gui) {
 		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setCurrentDirectory(new File("C:\\Users\\ges_k\\OneDrive\\Desktop\\summer project\\"));
+		fileChooser.setCurrentDirectory(new File("C:\\Users\\ges_k\\OneDrive\\Desktop\\summer project\\VirusHeatmap-master\\"));
 		int result = fileChooser.showOpenDialog(gui);
 		if (result == JFileChooser.APPROVE_OPTION) {
 			File selection = fileChooser.getSelectedFile();
@@ -56,6 +63,7 @@ public class HeatmapModel {
 				genomePosition.add(tableLine.get(0)); // store the first column of the file with genome positions
 
 				table.add(tableLine);
+				customTable.add(tableLine);
 			}
 			genomePosition.remove(0);
 
@@ -68,14 +76,29 @@ public class HeatmapModel {
 			// create an ArrayList that stores all the names of the regions by which the
 			// samples come from
 			for (int i = 0; i < samples.size(); i++) {
-				String[] sampleDetails = samples.get(i).split("/");
+				String[] sampleRegion = samples.get(i).split("/");
+				String[] sampleDate =samples.get(i).split("\\|");
 				if (countries.size() == 0) {
-					countries.add(sampleDetails[1]);
+					countries.add(sampleRegion[1]);
 
-				} else if (!(countries.contains(sampleDetails[1]))) {
-					countries.add(sampleDetails[1]);
+				} else if (!(countries.contains(sampleRegion[1]))) {
+					countries.add(sampleRegion[1]);
+				}
+				
+				if (dates.size() == 0) {
+					dates.add(sampleDate[2]);
+
+				} else if (!(dates.contains(sampleDate[2]))) {
+					dates.add(sampleDate[2]);
 				}
 			}
+			String min =Collections.min(dates);
+			DateTimeFormatter minFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
+			minPastDate = LocalDate.parse(min, minFormatter);
+			
+			String max =Collections.max(dates);
+			DateTimeFormatter maxFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
+			maxDate = LocalDate.parse(max, maxFormatter);
 
 			positionNumber = table.size() - 1; // store the number of genome positions
 
@@ -122,11 +145,14 @@ public class HeatmapModel {
 
 				// generate the samples' name
 
-				g2.rotate(90);
+				 g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
+				 g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
+				 
 				for (int i = 0; i < table.get(0).size() - 1; i++) {
-					g2.drawString(table.get(0).get(i + 1), i + pointX, table.size() - 1 + pointY + pixel);
+					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel,-(i + pointX ));
 					pointX = pointX + pixel;
 				}
+
 			}
 		};
 
@@ -135,7 +161,7 @@ public class HeatmapModel {
 
 	// method that draws the heatmap with colors chosen by the user
 	public JPanel customDrawData(Color color1, Color color2, String numberSyn, String numberNonSyn,
-			ArrayList<ArrayList<String>> table) {
+			ArrayList<ArrayList<String>> table, int pixel) {
 		JPanel heatmapPanel = new JPanel() {
 			@Override
 			protected void paintComponent(Graphics g) {
@@ -148,8 +174,8 @@ public class HeatmapModel {
 				 * draw a rectangle for each position of the table and color it with the chosen
 				 * colors
 				 */
-				for (int y = 0; y < getPositionNumber(); y++) {
-					for (int x = 0; x < getSampleNumber(); x++) {
+				for (int y = 0; y < table.size() - 1; y++) {
+					for (int x = 0; x < table.get(0).size() - 1; x++) {
 						assignColors(g2, x + 1, y + 1, table);
 						if (table.get(y + 1).get(x + 1).equals(numberSyn)) {
 							g2.setColor(color1);
@@ -158,24 +184,29 @@ public class HeatmapModel {
 							g2.setColor(color2);
 						}
 
-						g2.fillRect(x + pointX, y + pointY, 8, 8);
-						pointX = pointX + 8;
+						g2.fillRect(x + pointX, y + pointY, pixel, pixel);
+						pointX = pointX + pixel;
 					}
 
 					// generate genome position labels
 
-					g2.drawString(genomePosition.get(y), getSampleNumber() + pointX, y + pointY + 8);
-					pointY = pointY + 8;
+					g2.drawString(genomePosition.get(y), getSampleNumber() + pointX, y + pointY + pixel);
+					pointY = pointY + pixel;
 					pointX = 0;
 
 				}
-
+				
 				// generate the samples' name
-				for (int i = 0; i < samples.size(); i++) {
+				
+				//rotate the sample names 90 degrees
+				
+				 g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
+				 g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
+				 
+				for (int i = 0; i < table.get(0).size() - 1; i++) {
 
-					g2.drawString(samples.get(i), i + pointX, getPositionNumber() + pointY + 8);
-					g2.rotate(90);
-					pointX = pointX + 8;
+					g2.drawString(table.get(0).get(i + 1),table.size() - 1  + pointY + pixel,-( i + pointX));
+					pointX = pointX + pixel;
 				}
 
 			}
@@ -287,5 +318,22 @@ public class HeatmapModel {
 	public ArrayList<ArrayList<String>> getTable() {
 		return table;
 	}
+
+	public LocalDate getMinPastDate() {
+		return minPastDate;
+	}
+
+	public LocalDate getMaxDate() {
+		return maxDate;
+	}
+
+	public ArrayList<ArrayList<String>> getCustomTable() {
+		return customTable;
+	}
+
+	public void setCustomTable(ArrayList<ArrayList<String>> customTable) {
+		this.customTable = customTable;
+	}
+	
 
 }

@@ -1,15 +1,27 @@
 import java.awt.*;
+import java.net.URL;
+import java.time.LocalDate;
+import java.util.Properties;
 import javax.swing.*;
+import com.github.lgooddatepicker.components.DatePicker;
+import com.github.lgooddatepicker.components.DatePickerSettings;
+import com.github.lgooddatepicker.components.DatePickerSettings.DateArea;
+import com.github.lgooddatepicker.demo.FullDemo;
+
+
 
 public class HeatmapGUI extends JFrame {
-	private JPanel menuPanel,rightPanel,customSizePanel, filterPanel;
+	private JPanel menuPanel,rightPanel,customSizePanel, filterPanel,datePanel;
 	private JMenuBar fileMenuBar;
 	private JMenu fileMenu, save,colors;
 	public JMenuItem importFile,savePDF,savePng,nonSynColor,synColor;
+	public JButton dateButton1,dateButton2;
 	private HeatmapController localController;
-
-
+	private DatePicker datePicker1, datePicker2;
+	private DatePickerSettings dateSettings1, dateSettings2;
+	private JLabel datesTo;
 	
+
 	//create the JFrame
 	public HeatmapGUI(HeatmapController controller) {
 		localController=controller;
@@ -23,6 +35,9 @@ public class HeatmapGUI extends JFrame {
 	}
 	
 	//setup method generates the main Panels and the buttons
+	/**
+	 * 
+	 */
 	private void setup() {
 		// create panels
 		menuPanel = new JPanel();
@@ -31,6 +46,9 @@ public class HeatmapGUI extends JFrame {
 		rightPanel.setLayout(new GridLayout(0,1));
 		customSizePanel=new JPanel();
 		filterPanel=new JPanel();
+		datePanel=new JPanel();
+		//datePanel.setLayout(new GridLayout(2,2));
+		
 	
 		//menuPanel
 		
@@ -83,17 +101,44 @@ public class HeatmapGUI extends JFrame {
 		pixelSize.setPaintTicks(true);
 		pixelSize.setPaintLabels(true);
 		
+		URL dateImageURL = FullDemo.class.getResource("/images/datepickerbutton1.png");
+	    Image dateExampleImage = Toolkit.getDefaultToolkit().getImage(dateImageURL);
+	    ImageIcon dateExampleIcon = new ImageIcon(dateExampleImage);
+		dateSettings1 = new DatePickerSettings();
+		dateSettings2 = new DatePickerSettings();
+
+		datePicker1 = new DatePicker(dateSettings1);
+		datePicker2 = new DatePicker(dateSettings2);
+		
+		dateButton1 = datePicker1.getComponentToggleCalendarButton();
+        dateButton1.setText("");
+        dateButton1.setIcon(dateExampleIcon);
+        dateButton2 = datePicker2.getComponentToggleCalendarButton();
+        dateButton2.setText("");
+        dateButton2.setIcon(dateExampleIcon);
+
+        dateSettings1.setColorBackgroundWeekdayLabels(new Color(100,149,237), true);
+        dateSettings1.setColorBackgroundWeekNumberLabels(new Color(100,149,237), true);
+        
+
+        dateSettings2.setColorBackgroundWeekdayLabels(new Color(100,149,237), true);
+        dateSettings2.setColorBackgroundWeekNumberLabels(new Color(100,149,237), true);
+		
+		
 		//create labels for the filters
 		JLabel pixels=new JLabel("Square size");
 		JLabel filters=new JLabel("Filters");
-		
+		datesTo=new JLabel("to");
 		//add the JComponents to the corresponding JPanels
 		customSizePanel.add(pixels);
 		customSizePanel.add(pixelSize);
+		
+	
+		
 		rightPanel.add(customSizePanel);
 		filterPanel.add(filters);
 		rightPanel.add(filterPanel);
-		
+		rightPanel.add(datePanel);
 		rightPanel.setVisible(false); //set rightPanel not visible 
 		
 		//add the panels to JFrame
@@ -102,6 +147,32 @@ public class HeatmapGUI extends JFrame {
 		
 	}
 	
+
+	public JPanel getDatePanel() {
+		return datePanel;
+	}
+
+	//getters
+	public JLabel getDatesTo() {
+		return datesTo;
+	}
+
+	public DatePicker getDatePicker1() {
+		return datePicker1;
+	}
+
+	public DatePicker getDatePicker2() {
+		return datePicker2;
+	}
+
+	public DatePickerSettings getDateSettings1() {
+		return dateSettings1;
+	}
+
+	public DatePickerSettings getDateSettings2() {
+		return dateSettings2;
+	}
+
 	//panels' getters to be used in the other classes
 	public JPanel getFilterPanel() {
 		return filterPanel;

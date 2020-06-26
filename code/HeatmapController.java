@@ -3,7 +3,10 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Vector;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
@@ -12,8 +15,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import com.github.lgooddatepicker.optionalusertools.DateChangeListener;
+import com.github.lgooddatepicker.zinternaltools.DateChangeEvent;
 
-public class HeatmapController implements ActionListener, ChangeListener {
+public class HeatmapController implements ActionListener, ChangeListener, DateChangeListener {
 	private HeatmapGUI gui;
 	private HeatmapModel modelObject;
 	private RegionsComboBox regionsBox;
@@ -21,7 +26,11 @@ public class HeatmapController implements ActionListener, ChangeListener {
 	private Color newSynColor, newNonSynColor;
 	private JPanel heatmapPanel;
 	private JScrollPane scrollPane;
+	private LocalDate toDate=null;
+	private LocalDate fromDate=null;
 	ArrayList<ArrayList<String>> filteredTable;
+	ArrayList<ArrayList<String>> newfilteredTable;
+	ArrayList<Integer> indexToRemove;
 
 	public HeatmapController(HeatmapModel model) {
 		modelObject = model;
@@ -54,6 +63,20 @@ public class HeatmapController implements ActionListener, ChangeListener {
 			regionsBox = new RegionsComboBox(v); // create a JComboBox with checkboxes
 			regionsBox.addActionListener(this);
 			gui.getFilterPanel().add(regionsBox);
+
+			// --------------------set date limits and add the date pickers to corresponding
+			// panel ----------------------------------------
+
+			gui.getDateSettings1().setDateRangeLimits(modelObject.getMinPastDate(), modelObject.getMaxDate());
+			gui.getDateSettings2().setDateRangeLimits(modelObject.getMinPastDate(), modelObject.getMaxDate());
+			gui.getDatePicker1().setDate(modelObject.getMinPastDate());
+			gui.getDatePicker2().setDate(modelObject.getMaxDate());
+			gui.getDatePicker1().addDateChangeListener(this);
+			gui.getDatePicker2().addDateChangeListener(this);
+			gui.getDatePanel().add(gui.getDatePicker1());
+			gui.getDatePanel().add(gui.getDatesTo());
+			gui.getDatePanel().add(gui.getDatePicker2());
+
 			gui.getRightPanel().setVisible(true); // set the panel with filters visible
 
 			gui.revalidate();
@@ -71,10 +94,10 @@ public class HeatmapController implements ActionListener, ChangeListener {
 																								// selected by the user
 			if (newNonSynColor == null) { // check if the user has already change the non-synonymous color
 				heatmapPanel = modelObject.customDrawData(newSynColor, Color.MAGENTA, "1", "-1",
-						modelObject.getTable());
+						modelObject.getCustomTable(),8);
 			} else {
 				heatmapPanel = modelObject.customDrawData(newSynColor, newNonSynColor, "1", "-1",
-						modelObject.getTable());
+						modelObject.getCustomTable(),8);
 			}
 			/*
 			 * remove the old heatmap Panel and recreate the new one
@@ -96,10 +119,10 @@ public class HeatmapController implements ActionListener, ChangeListener {
 
 			if (newSynColor == null) { // check if the user has already change the synonymous color
 				heatmapPanel = modelObject.customDrawData(Color.GREEN, newNonSynColor, "1", "-1",
-						modelObject.getTable());
+						modelObject.getCustomTable(),8);
 			} else {
 				heatmapPanel = modelObject.customDrawData(newSynColor, newNonSynColor, "1", "-1",
-						modelObject.getTable());
+						modelObject.getCustomTable(),8);
 			}
 			gui.remove(scrollPane);
 			heatmapPanel.setPreferredSize(new Dimension(5000, 5000));
@@ -153,12 +176,117 @@ public class HeatmapController implements ActionListener, ChangeListener {
 			gui.remove(scrollPane);
 			heatmapPanel = modelObject.drawData(modelObject.getTable(), pixel);
 
-			heatmapPanel.setPreferredSize(new Dimension(500 * pixel, 500 * pixel));
+			heatmapPanel.setPreferredSize(new Dimension(600*pixel, 600*pixel));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
 			gui.revalidate();
 
+		}
+	}
+
+	@Override
+	public void dateChanged(DateChangeEvent e) {
+		ArrayList<String> tempRow = null;
+		if (e.getSource() == gui.getDatePicker1()) {
+			LocalDate fromDate = gui.getDatePicker1().getDate();
+			
+				newfilteredTable = new ArrayList<ArrayList<String>>();
+				indexToRemove = new ArrayList<Integer>();
+				for (int i = 0; i < modelObject.getCustomTable().get(0).size(); i++) {
+					if (i != 0) {
+						String[] sampleDate = modelObject.getCustomTable().get(0).get(i).split("\\|");
+						if (sampleDate[2].length() == 10) {
+							LocalDate convertedDate = LocalDate.parse(sampleDate[2],
+									DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH));
+							if (toDate == null) {
+								if (convertedDate.isBefore(fromDate)) {
+									indexToRemove.add(i);
+								}
+							}else {
+								if (convertedDate.isBefore(fromDate) || convertedDate.isAfter(toDate)) {
+									indexToRemove.add(i);
+								}
+							}
+						}
+					}
+				}
+
+				for (int j = 0; j < modelObject.getCustomTable().size(); j++) {
+					int countRemove = 0;
+					for (int i : indexToRemove) {
+						tempRow = modelObject.getCustomTable().get(j);
+						tempRow.remove(i - countRemove);
+						countRemove += 1;
+					}
+					newfilteredTable.add(tempRow);
+
+				}
+
+			modelObject.getCustomTable().clear();
+			modelObject.setCustomTable(newfilteredTable);
+			/*
+			 * remove the old heatmap Panel and recreate the new one
+			 */
+
+			gui.remove(scrollPane);
+			heatmapPanel = modelObject.drawData(newfilteredTable, 8);
+
+			heatmapPanel.setPreferredSize(new Dimension(5000, 5000));
+			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+			gui.revalidate();
+
+		}
+		if (e.getSource() == gui.getDatePicker2()){
+			toDate = gui.getDatePicker2().getDate();
+			newfilteredTable = new ArrayList<ArrayList<String>>();
+			indexToRemove = new ArrayList<Integer>();
+			for (int i = 0; i < modelObject.getCustomTable().get(0).size(); i++) {
+				if (i != 0) {
+					String[] sampleDate = modelObject.getCustomTable().get(0).get(i).split("\\|");
+					if (sampleDate[2].length() == 10) {
+						LocalDate convertedDate = LocalDate.parse(sampleDate[2],
+								DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH));
+						if (fromDate == null) {
+							if (convertedDate.isAfter(toDate)) {
+								indexToRemove.add(i);
+							}
+						}else {
+							if (convertedDate.isBefore(fromDate) || convertedDate.isAfter(toDate)) {
+								indexToRemove.add(i);
+							}
+						}
+					}
+				}
+			}
+
+			for (int j = 0; j < modelObject.getCustomTable().size(); j++) {
+				int countRemove = 0;
+				for (int i : indexToRemove) {
+					tempRow = modelObject.getCustomTable().get(j);
+					tempRow.remove(i - countRemove);
+					countRemove += 1;
+				}
+				newfilteredTable.add(tempRow);
+
+			}
+
+		modelObject.getCustomTable().clear();
+		modelObject.setCustomTable(newfilteredTable);
+		/*
+		 * remove the old heatmap Panel and recreate the new one
+		 */
+
+		gui.remove(scrollPane);
+		heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), 8);
+
+		heatmapPanel.setPreferredSize(new Dimension(5000, 5000));
+		scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+		gui.revalidate();
 		}
 	}
 }

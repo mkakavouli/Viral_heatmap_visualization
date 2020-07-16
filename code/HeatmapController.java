@@ -1,8 +1,11 @@
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -10,9 +13,11 @@ import java.util.Locale;
 import java.util.Vector;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
+import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
+import javax.swing.ToolTipManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import com.github.lgooddatepicker.optionalusertools.DateChangeListener;
@@ -21,6 +26,7 @@ import com.github.lgooddatepicker.zinternaltools.DateChangeEvent;
 public class HeatmapController implements ActionListener, ChangeListener, DateChangeListener {
 	private HeatmapGUI gui;
 	private HeatmapModel modelObject;
+	private HeatmapClustering clusteringObject;
 	private RegionsComboBox regionsBox;
 	private JColorChooser cc;
 	private Color newSynColor, newNonSynColor;
@@ -30,11 +36,14 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 	private LocalDate fromDate=null;
 	ArrayList<ArrayList<String>> filteredTable;
 	ArrayList<ArrayList<String>> newfilteredTable;
+	ArrayList<ArrayList<String>> clusteredTable;
+	ArrayList<ArrayList<String>> sortedTable;
 	ArrayList<Integer> indexToRemove;
 
 	public HeatmapController(HeatmapModel model) {
 		modelObject = model;
 		gui = new HeatmapGUI(this);
+		clusteringObject=new HeatmapClustering();
 	}
 
 	// manage the actions after the press of a button
@@ -44,7 +53,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			String file = modelObject.selectFile(gui); // get the file with mutation data
 			modelObject.readFile(file);
 			heatmapPanel = modelObject.drawData(modelObject.getTable(), 8); // draw the heatmap with obtained data
-			heatmapPanel.setPreferredSize(new Dimension(5000, 6000));
+			heatmapPanel.setPreferredSize(new Dimension(9300, 8500));
+		
 			/*
 			 * add the heatmap panel to a scrollPane and add the scrollPane to the JFrame
 			 */
@@ -132,30 +142,80 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 
 			gui.revalidate();
 
-		} else if (e.getSource() == (RegionsComboBox) e.getSource()) { // handle action when a region in the JCombobox
-																		// is selected
+		}else if(e.getSource()==gui.mutationTypes) {
+			JComboBox cb = (JComboBox)e.getSource();
+			String mutType = (String)cb.getSelectedItem();
+			Integer mutNumber=gui.getMutationsHash().get(mutType);
+			
+			
+        }else if(e.getSource()==gui.clusterButton) {
+        	clusteredTable=clusteringObject.clusterData(modelObject.getCustomTable());
+        	modelObject.getCustomTable().clear();
+			modelObject.setCustomTable(clusteredTable);
+			
+			gui.remove(scrollPane);
+			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), 8);
 
+			heatmapPanel.setPreferredSize(new Dimension(10000, 10000));
+			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+			gui.revalidate();
+			
+        }else if(e.getSource()==gui.sortButton) {
+        	sortedTable=clusteringObject.sortDateData(modelObject.getCustomTable());
+        	modelObject.getCustomTable().clear();
+			modelObject.setCustomTable(sortedTable);
+			
+			gui.remove(scrollPane);
+			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), 8);
+
+			heatmapPanel.setPreferredSize(new Dimension(10000, 10000));
+			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+			gui.revalidate();
+			
+			
+        }else if (e.getSource() == (RegionsComboBox) e.getSource()) { // handle action when a region in the JCombobox
+																		// is selected
+        	ArrayList<String> tempRow = null;
 			String regionName = regionsBox.checkedBox(); // store the name of the selected region
-			filteredTable = new ArrayList<ArrayList<String>>();
-			filteredTable = modelObject.getTable();
+			newfilteredTable = new ArrayList<ArrayList<String>>();
+			//filteredTable = modelObject.getTable();
+			indexToRemove=new ArrayList<Integer>();
+			for (int i = 1; i < modelObject.getCustomTable().get(0).size(); i++) {
+				String[] sampleRegion = modelObject.getCustomTable().get(0).get(i).split("/");
+				if(!(regionName.contentEquals(sampleRegion[1]))) {
+					indexToRemove.add(i);
+				}			
+			}
 			/*
 			 * find the columns(samples) that don't contain at their details the selected
 			 * region and remove those columns
 			 */
 
-			for (int j = 0; j < modelObject.getTable().size(); j++) {
-				for (int i = 0; i < modelObject.getTable().get(0).size(); i++) {
-					if (!(modelObject.getTable().get(0).get(i).contains(regionName)) && i != 0) {
-						filteredTable.get(j).remove(i);
-					}
+
+			for (int j = 0; j < modelObject.getCustomTable().size(); j++) {
+				int countRemove = 0;
+				for (int i : indexToRemove) {
+					tempRow = modelObject.getCustomTable().get(j);
+					tempRow.remove(i - countRemove);
+					countRemove += 1;
 				}
+				newfilteredTable.add(tempRow);
+
 			}
+
+		modelObject.getCustomTable().clear();
+		modelObject.setCustomTable(newfilteredTable);
+		/*
 			/*
 			 * remove the old heatmap Panel and recreate the new one
 			 */
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(filteredTable, 8);
+			heatmapPanel = modelObject.drawData(newfilteredTable, 8);
 
 			heatmapPanel.setPreferredSize(new Dimension(5000, 5000));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
@@ -174,9 +234,9 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			int pixel = (int) source.getValue(); // store the new pixel value
 			// create the heatmap Panel
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(modelObject.getTable(), pixel);
+			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel);
 
-			heatmapPanel.setPreferredSize(new Dimension(600*pixel, 600*pixel));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size()*(pixel+1),modelObject.customTable.get(0).size()*(pixel+1)));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);

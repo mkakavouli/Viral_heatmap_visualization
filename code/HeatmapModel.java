@@ -1,6 +1,10 @@
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -18,6 +22,7 @@ import java.util.Scanner;
 import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
+import javax.swing.ToolTipManager;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Image;
@@ -32,6 +37,8 @@ public class HeatmapModel {
 	ArrayList<String> samples = new ArrayList<String>();
 	ArrayList<String> countries = new ArrayList<String>();
 	ArrayList<String> dates = new ArrayList<String>();
+	ArrayList<String> globalLineage = new ArrayList<String>();
+	ArrayList<String> UKLineage = new ArrayList<String>();
 	ArrayList<ArrayList<String>> table = new ArrayList<ArrayList<String>>();
 	ArrayList<ArrayList<String>> customTable = new ArrayList<ArrayList<String>>();
 
@@ -39,7 +46,8 @@ public class HeatmapModel {
 	// selected file
 	public String selectFile(HeatmapGUI gui) {
 		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setCurrentDirectory(new File("C:\\Users\\ges_k\\OneDrive\\Desktop\\summer project\\VirusHeatmap-master\\"));
+		fileChooser.setCurrentDirectory(
+				new File("C:\\Users\\ges_k\\OneDrive\\Desktop\\summer project\\VirusHeatmap-master\\"));
 		int result = fileChooser.showOpenDialog(gui);
 		if (result == JFileChooser.APPROVE_OPTION) {
 			File selection = fileChooser.getSelectedFile();
@@ -58,9 +66,9 @@ public class HeatmapModel {
 				String line = s.nextLine();
 				tableLine = new ArrayList<>(Arrays.asList(line.split("\t")));
 
-				sampleNumber = tableLine.size() - 1; // store the number of tableLine
+				sampleNumber = tableLine.size() - 10; // store the number of tableLine
 
-				genomePosition.add(tableLine.get(0)); // store the first column of the file with genome positions
+				genomePosition.add(tableLine.get(10)); // store the first column of the file with genome positions
 
 				table.add(tableLine);
 				customTable.add(tableLine);
@@ -68,7 +76,7 @@ public class HeatmapModel {
 			genomePosition.remove(0);
 
 			// store samples'name in ArrayList
-			for (int i = 0; i < table.get(0).size(); i++) {
+			for (int i = 10; i < table.get(0).size(); i++) {
 				samples.add(table.get(0).get(i));
 			}
 			samples.remove(0);
@@ -77,26 +85,39 @@ public class HeatmapModel {
 			// samples come from
 			for (int i = 0; i < samples.size(); i++) {
 				String[] sampleRegion = samples.get(i).split("/");
-				String[] sampleDate =samples.get(i).split("\\|");
+				String[] sampleDate = samples.get(i).split("\\|");
 				if (countries.size() == 0) {
 					countries.add(sampleRegion[1]);
 
 				} else if (!(countries.contains(sampleRegion[1]))) {
 					countries.add(sampleRegion[1]);
 				}
-				
+
 				if (dates.size() == 0) {
 					dates.add(sampleDate[2]);
 
 				} else if (!(dates.contains(sampleDate[2]))) {
 					dates.add(sampleDate[2]);
 				}
+				if (globalLineage.size() == 0) {
+					globalLineage.add(sampleDate[3]);
+
+				} else if (!(globalLineage.contains(sampleDate[3]))) {
+					globalLineage.add(sampleDate[3]);
+				}
+				if (UKLineage.size() == 0) {
+					UKLineage.add(sampleDate[4]);
+
+				} else if (!(UKLineage.contains(sampleDate[4]))) {
+					UKLineage.add(sampleDate[4]);
+				}
 			}
-			String min =Collections.min(dates);
+
+			String min = Collections.min(dates);
 			DateTimeFormatter minFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 			minPastDate = LocalDate.parse(min, minFormatter);
-			
-			String max =Collections.max(dates);
+
+			String max = Collections.max(dates);
 			DateTimeFormatter maxFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 			maxDate = LocalDate.parse(max, maxFormatter);
 
@@ -117,6 +138,7 @@ public class HeatmapModel {
 	// method that draws the heatmap with the default colors
 	public JPanel drawData(ArrayList<ArrayList<String>> table, int pixel) {
 		JPanel heatmapPanel = new JPanel() {
+
 			@Override
 			protected void paintComponent(Graphics g) {
 				super.paintComponent(g);
@@ -124,14 +146,28 @@ public class HeatmapModel {
 				// start X,Y coordinates for drawing data
 				int pointX = 0;
 				int pointY = 0;
+
 				/*
 				 * draw a rectangle for each position of the table and color it with the default
 				 * colors
 				 */
 				for (int y = 0; y < table.size() - 1; y++) {
-					for (int x = 0; x < table.get(0).size() - 1; x++) {
+					for (int x = 10; x < table.get(0).size() - 1; x++) {
 						assignColors(g2, x + 1, y + 1, table);
+
 						g2.fillRect(x + pointX, y + pointY, pixel, pixel);
+
+						if (!(table.get(y + 1).get(x + 1).equals("."))) {
+
+							this.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>" + table.get(0).get(x) + "</b>"
+									+ "<br>" + "Genome Position:" + "<br>" + "<b>" + table.get(y).get(10) + "</b>"
+									+ "<br>" + "Mutation:" + "<br>" + table.get(y + 1).get(x + 1).substring(9, 12)
+									+ "</html>");
+						} else if (table.get(y + 1).get(x + 1).equals(".")) {
+							this.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>" + table.get(0).get(x) + "</b>"
+									+ "<br>" + "Genome Position:" + "<br>" + "<b>" + table.get(y).get(10) + "</b>"
+									+ "<br>" + "Mutation:" + "<br>" + "<b>" + "no mutation" + "</html>");
+						}
 						pointX = pointX + pixel;
 					}
 
@@ -145,16 +181,46 @@ public class HeatmapModel {
 
 				// generate the samples' name
 
-				 g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
-				 g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
-				 
-				for (int i = 0; i < table.get(0).size() - 1; i++) {
-					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel,-(i + pointX ));
+				g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
+				g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
+
+				for (int i = 10; i < table.get(0).size() - 1; i++) {
+					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel, -(i + pointX));
 					pointX = pointX + pixel;
 				}
 
 			}
 		};
+
+		heatmapPanel.addMouseMotionListener(new MouseMotionListener() {
+
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				int pointX = 0;
+				int pointY = 0;
+
+				for (int y = 0; y < table.size() - 1; y++) {
+					for (int x = 10; x < table.get(0).size() - 1; x++) {
+						Rectangle rect = new Rectangle();
+						rect.setBounds(x + pointX, y + pointY, pixel, pixel);
+						if (rect.contains(e.getPoint())) {
+							heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + table.get(0).get(x + 1) + "<br>"
+									+ "Genome Position:" + "<br>" + table.get(y + 1).get(0) + "</html>");
+						}
+						pointX += pixel;
+					}
+					pointX = 0;
+					pointY += pixel;
+					ToolTipManager.sharedInstance().mouseMoved(e);
+				}
+
+			}
+
+			@Override
+			public void mouseDragged(MouseEvent e) {
+			}
+
+		});
 
 		return heatmapPanel;
 	}
@@ -185,6 +251,7 @@ public class HeatmapModel {
 						}
 
 						g2.fillRect(x + pointX, y + pointY, pixel, pixel);
+						setToolTipText("fvdsv" + pointX);
 						pointX = pointX + pixel;
 					}
 
@@ -195,22 +262,51 @@ public class HeatmapModel {
 					pointX = 0;
 
 				}
-				
+
 				// generate the samples' name
-				
-				//rotate the sample names 90 degrees
-				
-				 g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
-				 g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
-				 
+
+				// rotate the sample names 90 degrees
+
+				g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
+				g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
+
 				for (int i = 0; i < table.get(0).size() - 1; i++) {
 
-					g2.drawString(table.get(0).get(i + 1),table.size() - 1  + pointY + pixel,-( i + pointX));
+					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel, -(i + pointX));
 					pointX = pointX + pixel;
 				}
 
 			}
 		};
+		heatmapPanel.addMouseMotionListener(new MouseMotionListener() {
+
+			@Override
+			public void mouseMoved(MouseEvent e) {
+				int pointX = 0;
+				int pointY = 0;
+
+				for (int y = 0; y < table.size() - 1; y++) {
+					for (int x = 0; x < table.get(0).size() - 1; x++) {
+						Rectangle rect = new Rectangle();
+						rect.setBounds(x + pointX, y + pointY, pixel, pixel);
+						if (rect.contains(e.getPoint())) {
+							heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + table.get(0).get(x + 1) + "<br>"
+									+ "Genome Position:" + "<br>" + table.get(y + 1).get(0) + "</html>");
+						}
+						pointX += pixel;
+					}
+					pointX = 0;
+					pointY += pixel;
+					ToolTipManager.sharedInstance().mouseMoved(e);
+				}
+
+			}
+
+			@Override
+			public void mouseDragged(MouseEvent e) {
+			}
+
+		});
 
 		return heatmapPanel;
 	}
@@ -219,18 +315,21 @@ public class HeatmapModel {
 	// position and assign the appropriate color to the graphic
 	public void assignColors(Graphics2D g, int x, int y, ArrayList<ArrayList<String>> table) {
 
-		String number = table.get(y).get(x);
+		String mutation = table.get(y).get(x);
 
-		if (number.equals("0")) { // no mutation
+		if (mutation.equals(".")) { // no mutation
 			g.setColor(Color.GRAY);
-		} else if (number.equals("1")) { // synonymous
-			g.setColor(Color.GREEN);
-		} else if (number.equals("-1")) { // non-synonymous
-			g.setColor(Color.MAGENTA);
-		} else if (number.equals("2")) { // insertions
-			g.setColor(Color.YELLOW);
-		} else if (number.equals("3")) { // deletions
-			g.setColor(Color.RED);
+		} else {
+			String[] mutDescription = mutation.split(":");
+			if (mutDescription[0].equals("Syn")) { // synonymous
+				g.setColor(Color.GREEN);
+			} else if (mutDescription[0].equals("Non")) { // non-synonymous
+				g.setColor(Color.MAGENTA);
+			} else if (mutDescription[0].equals("Ins")) { // insertions
+				g.setColor(Color.YELLOW);
+			} else if (mutDescription[0].equals("Del")) { // deletions
+				g.setColor(Color.BLACK);
+			}
 		}
 
 	}
@@ -334,6 +433,5 @@ public class HeatmapModel {
 	public void setCustomTable(ArrayList<ArrayList<String>> customTable) {
 		this.customTable = customTable;
 	}
-	
 
 }

@@ -154,20 +154,7 @@ public class HeatmapModel {
 				for (int y = 0; y < table.size() - 1; y++) {
 					for (int x = 10; x < table.get(0).size() - 1; x++) {
 						assignColors(g2, x + 1, y + 1, table);
-
-						g2.fillRect(x + pointX, y + pointY, pixel, pixel);
-
-						if (!(table.get(y + 1).get(x + 1).equals("."))) {
-
-							this.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>" + table.get(0).get(x) + "</b>"
-									+ "<br>" + "Genome Position:" + "<br>" + "<b>" + table.get(y).get(10) + "</b>"
-									+ "<br>" + "Mutation:" + "<br>" + table.get(y + 1).get(x + 1).substring(9, 12)
-									+ "</html>");
-						} else if (table.get(y + 1).get(x + 1).equals(".")) {
-							this.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>" + table.get(0).get(x) + "</b>"
-									+ "<br>" + "Genome Position:" + "<br>" + "<b>" + table.get(y).get(10) + "</b>"
-									+ "<br>" + "Mutation:" + "<br>" + "<b>" + "no mutation" + "</html>");
-						}
+						g2.fillRect(x + pointX - 10, y + pointY, pixel, pixel);
 						pointX = pointX + pixel;
 					}
 
@@ -185,7 +172,7 @@ public class HeatmapModel {
 				g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
 
 				for (int i = 10; i < table.get(0).size() - 1; i++) {
-					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel, -(i + pointX));
+					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel, -(i + pointX - 10));
 					pointX = pointX + pixel;
 				}
 
@@ -202,10 +189,21 @@ public class HeatmapModel {
 				for (int y = 0; y < table.size() - 1; y++) {
 					for (int x = 10; x < table.get(0).size() - 1; x++) {
 						Rectangle rect = new Rectangle();
-						rect.setBounds(x + pointX, y + pointY, pixel, pixel);
+						rect.setBounds(x + pointX - 10, y + pointY, pixel, pixel);
 						if (rect.contains(e.getPoint())) {
-							heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + table.get(0).get(x + 1) + "<br>"
-									+ "Genome Position:" + "<br>" + table.get(y + 1).get(0) + "</html>");
+							if (!(table.get(y + 1).get(x + 1).equals("."))) {
+								heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>"
+										+ table.get(0).get(x + 1) + "</b>" + "<br>" + "Genome Position:" + "<br>"
+										+ "<b>" + table.get(y + 1).get(10) + "</b>" + "<br>" + "Base substitution:"
+										+ "<br>" + "<b>" + table.get(y + 1).get(x + 1).substring(27, 34) + "</b>"
+										+ "<br>" + "Amino acid substitution:" + "<br>" + "<b>"
+										+ table.get(y + 1).get(x + 1).substring(47, 50) + "</b>" + "</html>");
+							} else if (table.get(y + 1).get(x + 1).equals(".")) {
+								heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>"
+										+ table.get(0).get(x + 1) + "</b>" + "<br>" + "Genome Position:" + "<br>"
+										+ "<b>" + table.get(y + 1).get(10) + "</b>" + "<br>" + "<b>" + "No mutation"
+										+ "</html>");
+							}
 						}
 						pointX += pixel;
 					}
@@ -226,7 +224,7 @@ public class HeatmapModel {
 	}
 
 	// method that draws the heatmap with colors chosen by the user
-	public JPanel customDrawData(Color color1, Color color2, String numberSyn, String numberNonSyn,
+	public JPanel customDrawData(Color color1, Color color2, String syn, String nonSyn,
 			ArrayList<ArrayList<String>> table, int pixel) {
 		JPanel heatmapPanel = new JPanel() {
 			@Override
@@ -241,23 +239,23 @@ public class HeatmapModel {
 				 * colors
 				 */
 				for (int y = 0; y < table.size() - 1; y++) {
-					for (int x = 0; x < table.get(0).size() - 1; x++) {
+					for (int x = 10; x < table.get(0).size() - 1; x++) {
 						assignColors(g2, x + 1, y + 1, table);
-						if (table.get(y + 1).get(x + 1).equals(numberSyn)) {
-							g2.setColor(color1);
+						if (!(table.get(y + 1).get(x + 1).equals("."))) {
+							if (table.get(y + 1).get(x + 1).substring(0, 3).equals(syn)) {
+								g2.setColor(color1);
+							}
+							if (table.get(y + 1).get(x + 1).substring(0, 3).equals(nonSyn)) {
+								g2.setColor(color2);
+							}
 						}
-						if (table.get(y + 1).get(x + 1).equals(numberNonSyn)) {
-							g2.setColor(color2);
-						}
-
-						g2.fillRect(x + pointX, y + pointY, pixel, pixel);
-						setToolTipText("fvdsv" + pointX);
+						g2.fillRect(x + pointX - 10, y + pointY, pixel, pixel);
 						pointX = pointX + pixel;
 					}
 
 					// generate genome position labels
 
-					g2.drawString(genomePosition.get(y), getSampleNumber() + pointX, y + pointY + pixel);
+					g2.drawString(genomePosition.get(y), table.get(0).size() - 1 + pointX, y + pointY + pixel);
 					pointY = pointY + pixel;
 					pointX = 0;
 
@@ -270,9 +268,9 @@ public class HeatmapModel {
 				g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
 				g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
 
-				for (int i = 0; i < table.get(0).size() - 1; i++) {
+				for (int i = 10; i < table.get(0).size() - 1; i++) {
 
-					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel, -(i + pointX));
+					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel, -(i + pointX - 10));
 					pointX = pointX + pixel;
 				}
 
@@ -286,12 +284,23 @@ public class HeatmapModel {
 				int pointY = 0;
 
 				for (int y = 0; y < table.size() - 1; y++) {
-					for (int x = 0; x < table.get(0).size() - 1; x++) {
+					for (int x = 10; x < table.get(0).size() - 1; x++) {
 						Rectangle rect = new Rectangle();
-						rect.setBounds(x + pointX, y + pointY, pixel, pixel);
+						rect.setBounds(x + pointX - 10, y + pointY, pixel, pixel);
 						if (rect.contains(e.getPoint())) {
-							heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + table.get(0).get(x + 1) + "<br>"
-									+ "Genome Position:" + "<br>" + table.get(y + 1).get(0) + "</html>");
+							if (!(table.get(y + 1).get(x + 1).equals("."))) {
+								heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>"
+										+ table.get(0).get(x + 1) + "</b>" + "<br>" + "Genome Position:" + "<br>"
+										+ "<b>" + table.get(y + 1).get(10) + "</b>" + "<br>" + "Base substitution:"
+										+ "<br>" + "<b>" + table.get(y + 1).get(x + 1).substring(27, 34) + "</b>"
+										+ "<br>" + "Amino acid substitution:" + "<br>" + "<b>"
+										+ table.get(y + 1).get(x + 1).substring(47, 50) + "</b>" + "</html>");
+							} else if (table.get(y + 1).get(x + 1).equals(".")) {
+								heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>"
+										+ table.get(0).get(x + 1) + "</b>" + "<br>" + "Genome Position:" + "<br>"
+										+ "<b>" + table.get(y + 1).get(10) + "</b>" + "<br>" + "<b>" + "No mutation"
+										+ "</html>");
+							}
 						}
 						pointX += pixel;
 					}

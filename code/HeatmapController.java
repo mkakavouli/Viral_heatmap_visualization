@@ -1,3 +1,28 @@
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Rectangle;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.Vector;
+import javax.swing.JCheckBox;
+import javax.swing.JColorChooser;
+import javax.swing.JComboBox;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSlider;
+import javax.swing.ToolTipManager;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import com.github.lgooddatepicker.optionalusertools.DateChangeListener;
+import com.github.lgooddatepicker.zinternaltools.DateChangeEvent;
+
 public class HeatmapController implements ActionListener, ChangeListener, DateChangeListener {
 	private HeatmapGUI gui;
 	private HeatmapModel modelObject;
@@ -29,7 +54,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			String file = modelObject.selectFile(gui); // get the file with mutation data
 			modelObject.readFile(file);
 			heatmapPanel = modelObject.drawData(modelObject.getTable(), pixel); // draw the heatmap with obtained data
-			heatmapPanel.setPreferredSize(new Dimension(pixel * 600, pixel * 600));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+60,
+					modelObject.customTable.size() * (pixel + 1)+500));
 
 			/*
 			 * add the heatmap panel to a scrollPane and add the scrollPane to the JFrame
@@ -131,7 +157,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 						modelObject.getCustomTable(), pixel);
 			}
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(5000, 5000));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+60,
+					modelObject.customTable.size() * (pixel + 1)+500));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -144,15 +171,98 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			String mutNumber = gui.getMutationsHash().get(mutType);
 			System.out.println(mutNumber);
 
+		}else if (e.getSource() == UKLineageBox) { //handles the uk lineage filter
+			String ukLineage = (String) UKLineageBox.checkedBox();
+			ArrayList<String> tempRow = null;
+			newfilteredTable = new ArrayList<ArrayList<String>>();
+	        indexToRemove = new ArrayList<Integer>();
+			for(int i=11;i<modelObject.getCustomTable().get(0).size();i++) {
+				String[] sampleUkLineage= modelObject.getCustomTable().get(0).get(i).split("\\|");
+				if(!(sampleUkLineage[4].equals(ukLineage))) {
+					indexToRemove.add(i);
+				}
+				
+			}
+			for (int j = 0; j < modelObject.getCustomTable().size(); j++) {
+                int countRemove = 0;
+                for (int i : indexToRemove) {
+                    tempRow = modelObject.getCustomTable().get(j);
+                    tempRow.remove(i - countRemove);
+                    countRemove += 1;
+                }
+                newfilteredTable.add(tempRow);
+
+            }
+
+            modelObject.getCustomTable().clear();
+            modelObject.setCustomTable(newfilteredTable);
+            /*
+             * remove the old heatmap Panel and recreate the new one
+             */
+
+            gui.remove(scrollPane);
+            heatmapPanel = modelObject.drawData(newfilteredTable, pixel);
+
+            heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+60,
+					modelObject.customTable.size() * (pixel + 1)+500));
+            scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                    JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+            gui.revalidate();
+
+			
+
+		}else if (e.getSource() == 	globalLineageBox) { //handles the global lineage filter
+			String globalLineage = (String) globalLineageBox.checkedBox();
+			ArrayList<String> tempRow = null;
+			newfilteredTable = new ArrayList<ArrayList<String>>();
+	        indexToRemove = new ArrayList<Integer>();
+			for(int i=11;i<modelObject.getCustomTable().get(0).size();i++) {
+				String[] sampleUkLineage= modelObject.getCustomTable().get(0).get(i).split("\\|");
+				if(!(sampleUkLineage[3].equals(globalLineage))) {
+					indexToRemove.add(i);
+				}
+				
+			}
+			for (int j = 0; j < modelObject.getCustomTable().size(); j++) {
+                int countRemove = 0;
+                for (int i : indexToRemove) {
+                    tempRow = modelObject.getCustomTable().get(j);
+                    tempRow.remove(i - countRemove);
+                    countRemove += 1;
+                }
+                newfilteredTable.add(tempRow);
+
+            }
+
+            modelObject.getCustomTable().clear();
+            modelObject.setCustomTable(newfilteredTable);
+            /*
+             * remove the old heatmap Panel and recreate the new one
+             */
+
+            gui.remove(scrollPane);
+            heatmapPanel = modelObject.drawData(newfilteredTable, pixel);
+
+            heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+60,
+					modelObject.customTable.size() * (pixel + 1)+500));
+            scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                    JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+            gui.revalidate();
+
+			
+
 		} else if (e.getSource() == gui.hierarchicalClustered) {
 			clusteredTable = clusteringObject.clusterData(modelObject.getTable());
 			modelObject.getCustomTable().clear();
 			modelObject.setCustomTable(clusteredTable);
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(clusteredTable, 8);
+			heatmapPanel = modelObject.drawData(clusteredTable, pixel);
 
-			heatmapPanel.setPreferredSize(new Dimension(10000, 10000));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+60,
+					modelObject.customTable.size() * (pixel + 1)+500));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -164,9 +274,10 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			modelObject.setCustomTable(sortedTable);
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(sortedTable, 8);
+			heatmapPanel = modelObject.drawData(sortedTable, pixel);
 
-			heatmapPanel.setPreferredSize(new Dimension(10000, 10000));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+60,
+					modelObject.customTable.size() * (pixel + 1)+500));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -175,9 +286,10 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 		} else if (e.getSource() == gui.nonClustered) {
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(modelObject.getTable(), 8);
+			heatmapPanel = modelObject.drawData(modelObject.getTable(), pixel);
 
-			heatmapPanel.setPreferredSize(new Dimension(10000, 10000));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+60,
+					modelObject.customTable.size() * (pixel + 1)+500));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -219,9 +331,10 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			 */
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(newfilteredTable, 8);
+			heatmapPanel = modelObject.drawData(newfilteredTable, pixel);
 
-			heatmapPanel.setPreferredSize(new Dimension(5000, 5000));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+60,
+					modelObject.customTable.size() * (pixel + 1)+500));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -240,8 +353,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			gui.remove(scrollPane);
 			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel);
 
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1),
-					modelObject.customTable.get(0).size() * (pixel + 1)));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+60,
+					modelObject.customTable.size() * (pixel + 1)+500));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -258,12 +371,12 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 
 			newfilteredTable = new ArrayList<ArrayList<String>>();
 			indexToRemove = new ArrayList<Integer>();
-			for (int i = 0; i < modelObject.getCustomTable().get(0).size(); i++) {
-				if (i != 0) {
+			for (int i = 10; i < modelObject.getCustomTable().get(0).size(); i++) {
+				if (i != 10) {
 					String[] sampleDate = modelObject.getCustomTable().get(0).get(i).split("\\|");
 					if (sampleDate[2].length() == 10) {
 						LocalDate convertedDate = LocalDate.parse(sampleDate[2],
-								DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH));
+						DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH));
 						if (toDate == null) {
 							if (convertedDate.isBefore(fromDate)) {
 								indexToRemove.add(i);
@@ -295,9 +408,10 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			 */
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(newfilteredTable, 8);
+			heatmapPanel = modelObject.drawData(newfilteredTable, pixel);
 
-			heatmapPanel.setPreferredSize(new Dimension(5000, 5000));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+60,
+					modelObject.customTable.size() * (pixel + 1)+500));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -345,9 +459,10 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			 */
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), 8);
+			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel);
 
-			heatmapPanel.setPreferredSize(new Dimension(5000, 5000));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+60,
+					modelObject.customTable.size() * (pixel + 1)+500));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -355,3 +470,4 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 		}
 	}
 }
+

@@ -160,7 +160,7 @@ public class HeatmapModel {
 
 					// generate genome position labels
 
-					g2.drawString(genomePosition.get(y), table.get(0).size() - 1 + pointX, y + pointY + pixel);
+					g2.drawString(genomePosition.get(y), table.get(0).size() - 1 + pointX-10, y + pointY + pixel);
 					pointY = pointY + pixel;
 					pointX = 0;
 
@@ -255,7 +255,7 @@ public class HeatmapModel {
 
 					// generate genome position labels
 
-					g2.drawString(genomePosition.get(y), table.get(0).size() - 1 + pointX, y + pointY + pixel);
+					g2.drawString(genomePosition.get(y), table.get(0).size() - 1 + pointX-10, y + pointY + pixel);
 					pointY = pointY + pixel;
 					pointX = 0;
 

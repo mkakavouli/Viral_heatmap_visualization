@@ -14,7 +14,7 @@ public class HeatmapGUI extends JFrame {
 	private JPanel menuPanel, rightPanel, sizePanel, filterPanel, datePanel, customizePanel, orderingPanel,minNumbersPanel;
 	private JMenuBar fileMenuBar;
 	private JMenu fileMenu, save, colors;
-	public JMenuItem importFile, savePDF, savePng, nonSynColor, synColor;
+	public JMenuItem importFile, savePDF, savePng, nonSynColor, synColor,noMutColor,insColor,delColor,noCColor;
 	public JButton dateButton1, dateButton2;
 	public JRadioButton nonClustered, hierarchicalClustered, dateClustered;
 	private HeatmapController localController;
@@ -55,7 +55,6 @@ public class HeatmapGUI extends JFrame {
 		sizePanel.setLayout(new GridLayout(0, 1));
 		rightPanel = new JPanel();
 		rightPanel.setLayout(new GridLayout(0, 1));
-
 		filterPanel = new JPanel();
 		filterPanel.setLayout(new GridLayout(0, 1));
 		minNumbersPanel=new JPanel(new GridLayout(0, 1));
@@ -74,16 +73,23 @@ public class HeatmapGUI extends JFrame {
 		importFile = new JMenuItem("Import .txt file");
 		savePDF = new JMenuItem("PDF");
 		savePng = new JMenuItem("png/jpeg");
-		synColor = new JMenuItem("Synonumous mutation");
-		nonSynColor = new JMenuItem("Non-synonumous mutation");
+		synColor = new JMenuItem("Synonumous mutations color");
+		nonSynColor = new JMenuItem("Non-synonumous mutations color");
+		noMutColor = new JMenuItem("No mutation color");
+		insColor= new JMenuItem("Insertions color");
+		delColor= new JMenuItem("Deletions color");
+		noCColor= new JMenuItem("Non-coding mutations color");;
 
 		// add actionListener in all the menu-items
 		importFile.addActionListener(localController);
-		
 		savePDF.addActionListener(localController);
 		savePng.addActionListener(localController);
 		synColor.addActionListener(localController);
 		nonSynColor.addActionListener(localController);
+		noMutColor.addActionListener(localController);
+		insColor.addActionListener(localController);
+		delColor.addActionListener(localController);
+		noCColor.addActionListener(localController);
 
 		// add the menu-items to the menus
 		save.add(savePDF);
@@ -92,7 +98,11 @@ public class HeatmapGUI extends JFrame {
 		fileMenu.add(save);
 		colors.add(nonSynColor);
 		colors.add(synColor);
-
+		colors.add(noMutColor);
+		colors.add(insColor);
+		colors.add(delColor);
+		colors.add(noCColor);
+		
 		// add menus to the menubar
 		fileMenuBar.add(fileMenu);
 		fileMenuBar.add(colors);
@@ -183,16 +193,17 @@ public class HeatmapGUI extends JFrame {
 		////////////
 		JLabel minMutation= new JLabel("Minimum number of mutations/sample");
 		warning=new JLabel("");		
-		mutNumber=new JTextField("");
+		mutNumber=new JTextField();
 		mutNumber.addKeyListener(new KeyAdapter(){
 			@Override
-			public void keyPressed(KeyEvent e) {
+			public void keyTyped(KeyEvent e) {
 				try {
-					int temp=Integer.parseInt(mutNumber.getText());
+					int temp=Integer.parseInt(mutNumber.getText()+e.getKeyChar());;
 					warning.setText("");
 				}catch(NumberFormatException ex) {
 					warning.setForeground (Color.red);
 					warning.setText("Invalid format.Please type a numeric value");
+					return;
 				}
 			}
 		});
@@ -272,4 +283,3 @@ public class HeatmapGUI extends JFrame {
 	}
 
 }
-

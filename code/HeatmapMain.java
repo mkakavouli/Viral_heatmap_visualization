@@ -1,3 +1,4 @@
+import java.awt.Color;
 import java.awt.Dimension;
 import java.util.Scanner;
 import javax.swing.JPanel;
@@ -15,7 +16,7 @@ public class HeatmapMain {
 			Scanner s = new Scanner(System.in);
 			String filePath = s.next();
 			model.readFile(filePath);
-			heatmapPanel = model.drawData(model.getTable(), 8); // draw the heatmap with obtained data
+			heatmapPanel = model.drawData(model.getTable(), 8, Color.GRAY,Color.GREEN, Color.MAGENTA, Color.YELLOW, Color.BLACK, Color.ORANGE); // draw the heatmap with obtained data
 			heatmapPanel.setPreferredSize(new Dimension(model.getTable().get(0).size() * (8+ 1)+170,
 					model.getTable().size() * (8 + 1)+500));
 

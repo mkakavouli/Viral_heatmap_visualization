@@ -1,14 +1,8 @@
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionListener;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -17,11 +11,9 @@ import java.util.Locale;
 import java.util.Vector;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
-import javax.swing.JComboBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
-import javax.swing.ToolTipManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import com.github.lgooddatepicker.optionalusertools.DateChangeListener;
@@ -33,7 +25,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 	private HeatmapClustering clusteringObject;
 	private ComboBoxes regionsBox, globalLineageBox, UKLineageBox;
 	private JColorChooser cc;
-	private Color newSynColor, newNonSynColor;
+	private Color noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor ;
 	private JPanel heatmapPanel;
 	private JScrollPane scrollPane;
 	private LocalDate toDate = null;
@@ -51,6 +43,12 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 		modelObject = model;
 		gui = new HeatmapGUI(this);
 		clusteringObject = new HeatmapClustering();
+		noMutationColor=Color.GRAY;
+		synColor=Color.GREEN;
+		nonSynColor=Color.MAGENTA;
+		insColor=Color.YELLOW;
+		delColor=Color.BLACK;
+		noCodingColor=Color.ORANGE;
 	}
 
 	// manage the actions after the press of a button
@@ -59,7 +57,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 		if (e.getSource() == gui.importFile) { // handle the actions when the import file button is pressed
 			String file = modelObject.selectFile(gui); // get the file with mutation data
 			modelObject.readFile(file);
-			heatmapPanel = modelObject.drawData(modelObject.getTable(), pixel); // draw the heatmap with obtained data
+			heatmapPanel = modelObject.drawData(modelObject.getTable(), pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor ); // draw the heatmap with obtained data
 			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
 					modelObject.customTable.size() * (pixel + 1)+500));
 
@@ -126,42 +124,24 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			modelObject.saveImagePDF(heatmapPanel); // save the heatmap Panel as PDF
 
 		} else if (e.getSource() == gui.synColor) {
-
-			newSynColor = JColorChooser.showDialog(cc, "Color Chooser", gui.getBackground()); // save the color for the
-																								// synonymous mutation
-																								// selected by the user
-			if (newNonSynColor == null) { // check if the user has already change the non-synonymous color
-				heatmapPanel = modelObject.customDrawData(newSynColor, Color.MAGENTA, "Syn", "Non",
-						modelObject.getCustomTable(), pixel);
-			} else {
-				heatmapPanel = modelObject.customDrawData(newSynColor, newNonSynColor, "Syn", "Non",
-						modelObject.getCustomTable(), pixel);
-			}
+			synColor = JColorChooser.showDialog(cc, "Color Chooser", gui.getBackground()); // save the color for the synonymous mutation,selected by the user
+			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
+			
 			/*
 			 * remove the old heatmap Panel and recreate the new one
 			 */
-
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(5000, 5000));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
+					modelObject.customTable.size() * (pixel + 1)+500));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
 			gui.revalidate();
 
 		} else if (e.getSource() == gui.nonSynColor) {
-			newNonSynColor = JColorChooser.showDialog(cc, "Color Chooser", gui.getBackground()); // save the color for
-																									// the
-																									// non-synonymous
-																									// mutation selected
-																									// by the user
-
-			if (newSynColor == null) { // check if the user has already change the synonymous color
-				heatmapPanel = modelObject.customDrawData(Color.GREEN, newNonSynColor, "Syn", "Non",
-						modelObject.getCustomTable(), pixel);
-			} else {
-				heatmapPanel = modelObject.customDrawData(newSynColor, newNonSynColor, "Syn", "Non",
-						modelObject.getCustomTable(), pixel);
-			}
+			nonSynColor = JColorChooser.showDialog(cc, "Color Chooser", gui.getBackground()); // save the color for the non-synonymous mutation selected by the user
+			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
+		
 			gui.remove(scrollPane);
 			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
 					modelObject.customTable.size() * (pixel + 1)+500));
@@ -171,7 +151,59 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 
 			gui.revalidate();
 
-		} else if (e.getSource() == gui.getMutationBox()) {
+		} else if (e.getSource() == gui.noMutColor) {
+			noMutationColor = JColorChooser.showDialog(cc, "Color Chooser", gui.getBackground()); // save the color for the non-synonymous mutation selected by the user
+			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
+		
+			gui.remove(scrollPane);
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
+					modelObject.customTable.size() * (pixel + 1)+500));
+			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+
+			gui.revalidate();
+
+		}  else if (e.getSource() == gui.delColor) {
+			delColor = JColorChooser.showDialog(cc, "Color Chooser", gui.getBackground()); // save the color for the non-synonymous mutation selected by the user
+			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
+		
+			gui.remove(scrollPane);
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
+					modelObject.customTable.size() * (pixel + 1)+500));
+			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+
+			gui.revalidate();
+
+		} else if (e.getSource() == gui.insColor) {
+			insColor = JColorChooser.showDialog(cc, "Color Chooser", gui.getBackground()); // save the color for the non-synonymous mutation selected by the user
+			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
+		
+			gui.remove(scrollPane);
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
+					modelObject.customTable.size() * (pixel + 1)+500));
+			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+
+			gui.revalidate();
+
+		} else if (e.getSource() == gui.noCColor) {
+			noCodingColor = JColorChooser.showDialog(cc, "Color Chooser", gui.getBackground()); // save the color for the non-synonymous mutation selected by the user
+			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
+		
+			gui.remove(scrollPane);
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
+					modelObject.customTable.size() * (pixel + 1)+500));
+			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+
+			gui.revalidate();
+
+		}else if (e.getSource() == gui.getMutationBox()) {
 			String mutType = (String) gui.getMutationBox().checkedBox();
 			String mutNumber = gui.getMutationsHash().get(mutType);
 		
@@ -212,7 +244,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
              */
 
             gui.remove(scrollPane);
-            heatmapPanel = modelObject.drawData(newfilteredTable, pixel);
+            heatmapPanel = modelObject.drawData(newfilteredTable, pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
 
             heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
 					modelObject.customTable.size() * (pixel + 1)+500));
@@ -253,7 +285,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
              */
 
             gui.remove(scrollPane);
-            heatmapPanel = modelObject.drawData(newfilteredTable, pixel);
+            heatmapPanel = modelObject.drawData(newfilteredTable, pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
 
             heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
 					modelObject.customTable.size() * (pixel + 1)+500));
@@ -266,7 +298,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 
 		}else if(e.getSource()==gui.mutNumber) {
 			int minNumber=Integer.parseInt(gui.mutNumber.getText());
-			int[] countMutations=new int[modelObject.getTable().size()];
+			int[] countMutations=new int[modelObject.getTable().get(0).size()];
 			newfilteredTable = new ArrayList<ArrayList<String>>();
 	        indexToRemove = new ArrayList<Integer>();
 			Arrays.fill(countMutations, 0);
@@ -274,13 +306,13 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			    
 			    for(int i=11; i<modelObject.getTable().get(0).size();i++){
 			        if(!(modelObject.getTable().get(j).get(i).equals("."))){
-			            countMutations[i-11]+=1;
+			            countMutations[i]+=1;
 			        }
 			    }
 			}
-			for(int i=0;i<countMutations.length;i++){
+			for(int i=11;i<countMutations.length;i++){
 			    if (countMutations[i]<minNumber){
-			        indexToRemove.add(i+11);
+			        indexToRemove.add(i);
 			    }
 			}
 			for (int j = 0; j < modelObject.getTable().size(); j++) {
@@ -302,7 +334,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			             */
 
 			            gui.remove(scrollPane);
-			            heatmapPanel = modelObject.drawData(newfilteredTable, pixel);
+			            heatmapPanel = modelObject.drawData(newfilteredTable, pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
 
 			            heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
 			                    modelObject.customTable.size() * (pixel + 1)+500));
@@ -343,7 +375,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
              */
 
             gui.remove(scrollPane);
-            heatmapPanel = modelObject.drawData(newfilteredTable, pixel);
+            heatmapPanel = modelObject.drawData(newfilteredTable, pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
 
             heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
 					modelObject.customTable.size() * (pixel + 1)+500));
@@ -360,7 +392,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			modelObject.setCustomTable(clusteredTable);
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(clusteredTable, pixel);
+			heatmapPanel = modelObject.drawData(clusteredTable, pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
 
 			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
 					modelObject.customTable.size() * (pixel + 1)+500));
@@ -375,7 +407,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			modelObject.setCustomTable(sortedTable);
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(sortedTable, pixel);
+			heatmapPanel = modelObject.drawData(sortedTable, pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
 
 			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
 					modelObject.customTable.size() * (pixel + 1)+500));
@@ -387,7 +419,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 		} else if (e.getSource() == gui.nonClustered) {
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(modelObject.getTable(), pixel);
+			heatmapPanel = modelObject.drawData(modelObject.getTable(), pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
 
 			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
 					modelObject.customTable.size() * (pixel + 1)+500));
@@ -432,7 +464,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			 */
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(newfilteredTable, pixel);
+			heatmapPanel = modelObject.drawData(newfilteredTable, pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
 
 			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
 					modelObject.customTable.size() * (pixel + 1)+500));
@@ -452,7 +484,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			pixel = (int) source.getValue(); // store the new pixel value
 			// create the heatmap Panel
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel);
+			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
 
 			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
 					modelObject.customTable.size() * (pixel + 1)+500));
@@ -509,7 +541,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			 */
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(newfilteredTable, pixel);
+			heatmapPanel = modelObject.drawData(newfilteredTable, pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
 
 			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+180,
 					modelObject.customTable.size() * (pixel + 1)+500));
@@ -560,7 +592,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			 */
 
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel);
+			heatmapPanel = modelObject.drawData(newfilteredTable, pixel,noMutationColor,synColor, nonSynColor, insColor, delColor,noCodingColor);
 
 			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1)+170,
 					modelObject.customTable.size() * (pixel + 1)+500));
@@ -570,7 +602,5 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			gui.revalidate();
 		}
 	}
-
-	
 }
 

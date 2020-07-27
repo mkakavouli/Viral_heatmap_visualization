@@ -1,6 +1,7 @@
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.net.URL;
-import java.time.LocalDate;
 import java.util.Hashtable;
 import java.util.Vector;
 import javax.swing.*;
@@ -10,7 +11,7 @@ import com.github.lgooddatepicker.components.DatePickerSettings.DateArea;
 import com.github.lgooddatepicker.demo.FullDemo;
 
 public class HeatmapGUI extends JFrame {
-	private JPanel menuPanel, rightPanel, sizePanel, filterPanel, datePanel, customizePanel, orderingPanel;
+	private JPanel menuPanel, rightPanel, sizePanel, filterPanel, datePanel, customizePanel, orderingPanel,minNumbersPanel;
 	private JMenuBar fileMenuBar;
 	private JMenu fileMenu, save, colors;
 	public JMenuItem importFile, savePDF, savePng, nonSynColor, synColor;
@@ -19,9 +20,12 @@ public class HeatmapGUI extends JFrame {
 	private HeatmapController localController;
 	private DatePicker datePicker1, datePicker2;
 	private DatePickerSettings dateSettings1, dateSettings2;
-	private JLabel datesTo;
-	private ComboBoxes mutationBox;
-	private Hashtable<String, Integer> mutationsHash;
+	private JLabel datesTo,warning;
+	public JTextField mutNumber;
+	public ComboBoxes mutationBox;
+	
+
+	private Hashtable<String, String> mutationsHash;
 
 	// create the JFrame
 	public HeatmapGUI(HeatmapController controller) {
@@ -54,6 +58,7 @@ public class HeatmapGUI extends JFrame {
 
 		filterPanel = new JPanel();
 		filterPanel.setLayout(new GridLayout(0, 1));
+		minNumbersPanel=new JPanel(new GridLayout(0, 1));
 		datePanel = new JPanel();
 		// datePanel.setLayout(new GridLayout(2,2));
 
@@ -74,7 +79,7 @@ public class HeatmapGUI extends JFrame {
 
 		// add actionListener in all the menu-items
 		importFile.addActionListener(localController);
-		;
+		
 		savePDF.addActionListener(localController);
 		savePng.addActionListener(localController);
 		synColor.addActionListener(localController);
@@ -112,13 +117,13 @@ public class HeatmapGUI extends JFrame {
 		// Mutation types JComboBox
 		String[] mutations = { "Non synonymous", "Non coding", "Synonymous", "Insertions", "Deletions" };
 
-		mutationsHash = new Hashtable<String, Integer>();
-		mutationsHash.put("Non synonymous", -1);
-		mutationsHash.put("Non coding", -2);
-		mutationsHash.put("Synonymous", 1);
-		mutationsHash.put("Insertions", 2);
-		mutationsHash.put("Deletions", 3);
-		mutationsHash.put("No mutation", 0);
+		mutationsHash = new Hashtable<String, String>();
+		mutationsHash.put("Non synonymous", "Non");
+		mutationsHash.put("Non coding", "NCo");
+		mutationsHash.put("Synonymous", "Syn");
+		mutationsHash.put("Insertions", "Ins");
+		mutationsHash.put("Deletions", "Del");
+		mutationsHash.put("No mutation", ".");
 		Vector vMutations = new Vector();
 		vMutations.add("Types of Mutation");
 		vMutations.add(new JCheckBox("all types", true));
@@ -173,6 +178,28 @@ public class HeatmapGUI extends JFrame {
 		JLabel filters = new JLabel("Filters");
 		datesTo = new JLabel("to");
 		JLabel ordering = new JLabel("Data ordering options");
+		
+		
+		////////////
+		JLabel minMutation= new JLabel("Minimum number of mutations/sample");
+		warning=new JLabel("");		
+		mutNumber=new JTextField("");
+		mutNumber.addKeyListener(new KeyAdapter(){
+			@Override
+			public void keyPressed(KeyEvent e) {
+				try {
+					int temp=Integer.parseInt(mutNumber.getText());
+					warning.setText("");
+				}catch(NumberFormatException ex) {
+					warning.setForeground (Color.red);
+					warning.setText("Invalid format.Please type a numeric value");
+				}
+			}
+		});
+
+		mutNumber.addActionListener(localController);
+		////////////
+		
 		orderingPanel.add(ordering);
 		orderingPanel.add(nonClustered);
 		orderingPanel.add(hierarchicalClustered);
@@ -181,9 +208,15 @@ public class HeatmapGUI extends JFrame {
 		customizePanel.add(customize);
 		customizePanel.add(sizePanel);
 		customizePanel.add(orderingPanel);
+		
+		minNumbersPanel.add(minMutation);
+		minNumbersPanel.add(mutNumber);
+		minNumbersPanel.add(warning);
+		
 
 		rightPanel.add(customizePanel);
 		filterPanel.add(filters);
+		filterPanel.add(minNumbersPanel);
 		filterPanel.add(mutationBox);
 
 		rightPanel.add(filterPanel);
@@ -196,12 +229,16 @@ public class HeatmapGUI extends JFrame {
 
 	}
 
-	public Hashtable<String, Integer> getMutationsHash() {
+
+	public Hashtable<String, String> getMutationsHash() {
 		return mutationsHash;
 	}
 
 	public JPanel getDatePanel() {
 		return datePanel;
+	}
+	public ComboBoxes getMutationBox() {
+		return mutationBox;
 	}
 
 	// getters

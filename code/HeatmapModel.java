@@ -1,11 +1,13 @@
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -46,8 +48,7 @@ public class HeatmapModel {
 	// selected file
 	public String selectFile(HeatmapGUI gui) {
 		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setCurrentDirectory(
-				new File("C:\\Users\\ges_k\\OneDrive\\Desktop\\summer project\\VirusHeatmap-master\\"));
+		fileChooser.setCurrentDirectory(new File("C:\\Users\\ges_k\\OneDrive\\Desktop\\summer project\\VirusHeatmap-master\\"));
 		int result = fileChooser.showOpenDialog(gui);
 		if (result == JFileChooser.APPROVE_OPTION) {
 			File selection = fileChooser.getSelectedFile();
@@ -151,28 +152,38 @@ public class HeatmapModel {
 				 * draw a rectangle for each position of the table and color it with the default
 				 * colors
 				 */
+				Font boldf =new Font("default", Font.BOLD, 22);
+				Font defaultf=new Font("default",Font.PLAIN,12);
+				g2.setFont(boldf);
+				g2.drawString("Viral Samples", table.get(0).size()*pixel/2,17);
+				g2.setFont(defaultf);
 				for (int y = 0; y < table.size() - 1; y++) {
 					for (int x = 10; x < table.get(0).size() - 1; x++) {
 						assignColors(g2, x + 1, y + 1, table);
-						g2.fillRect(x + pointX - 10, y + pointY, pixel, pixel);
+						g2.fillRect(x + pointX - 10, y + pointY+20, pixel, pixel);
 						pointX = pointX + pixel;
 					}
 
 					// generate genome position labels
-
-					g2.drawString(genomePosition.get(y), table.get(0).size() - 1 + pointX-10, y + pointY + pixel);
+					g2.setPaint(Color.BLACK);
+					g2.drawString(genomePosition.get(y), table.get(0).size() - 1 + pointX-10, y + pointY + pixel+20);
 					pointY = pointY + pixel;
 					pointX = 0;
 
 				}
-
-				// generate the samples' name
-
+				g2.setFont(boldf);
+				
 				g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
 				g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
+				g2.drawString("Nucleotide position- ORF name",table.size()*(pixel+1)/2,-((table.get(0).size() - 1)*(pixel+1)+150));
+				g2.setFont(defaultf);
+				// generate the samples' name
+
+//				g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
+//				g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
 
 				for (int i = 10; i < table.get(0).size() - 1; i++) {
-					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel, -(i + pointX - 10));
+					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel+20, -(i + pointX - 10));
 					pointX = pointX + pixel;
 				}
 
@@ -189,7 +200,7 @@ public class HeatmapModel {
 				for (int y = 0; y < table.size() - 1; y++) {
 					for (int x = 10; x < table.get(0).size() - 1; x++) {
 						Rectangle rect = new Rectangle();
-						rect.setBounds(x + pointX - 10, y + pointY, pixel, pixel);
+						rect.setBounds(x + pointX - 10, y + pointY+20, pixel, pixel);
 						if (rect.contains(e.getPoint())) {
 							if (!(table.get(y + 1).get(x + 1).equals("."))) {
 								heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>"
@@ -378,6 +389,7 @@ public class HeatmapModel {
 	// as PDF file
 	public void saveImagePDF(JPanel panel) {
 		BufferedImage image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_RGB);
+		
 		panel.paint(image.getGraphics());
 		Document document = new Document();
 		PdfWriter writer = null;
@@ -409,6 +421,18 @@ public class HeatmapModel {
 			}
 		}
 	}
+	public void saveFromConsole(Component panel){
+		JPanel heatmap = new JPanel();
+	    heatmap.setPreferredSize(new Dimension(getTable().get(0).size() * (8+ 1)+170,
+				getTable().size() * (8 + 1)+500));
+	    heatmap.add(panel);
+	    BufferedImage bImage = ScreenImage.createImage(heatmap);
+	    try {
+	    	ScreenImage.writeImage(bImage, "image.png");
+	    }catch (IOException ex) {
+	    	ex.printStackTrace();
+	    }
+    }
 
 	// getters
 	public ArrayList<String> getCountries() {

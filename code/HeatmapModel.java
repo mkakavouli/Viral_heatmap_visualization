@@ -137,7 +137,7 @@ public class HeatmapModel {
 	}
 
 	// method that draws the heatmap with the default colors
-	public JPanel drawData(ArrayList<ArrayList<String>> table, int pixel) {
+	public JPanel drawData(ArrayList<ArrayList<String>> table, int pixel, Color NoM,Color Syn, Color Non, Color Ins, Color Del, Color NoC) {
 		JPanel heatmapPanel = new JPanel() {
 
 			@Override
@@ -159,7 +159,7 @@ public class HeatmapModel {
 				g2.setFont(defaultf);
 				for (int y = 0; y < table.size() - 1; y++) {
 					for (int x = 10; x < table.get(0).size() - 1; x++) {
-						assignColors(g2, x + 1, y + 1, table);
+						assignColors(g2, x + 1, y + 1, table, NoM,Syn,Non,Ins,Del,NoC);
 						g2.fillRect(x + pointX - 10, y + pointY+20, pixel, pixel);
 						pointX = pointX + pixel;
 					}
@@ -234,121 +234,27 @@ public class HeatmapModel {
 		return heatmapPanel;
 	}
 
-	// method that draws the heatmap with colors chosen by the user
-	public JPanel customDrawData(Color color1, Color color2, String syn, String nonSyn,
-			ArrayList<ArrayList<String>> table, int pixel) {
-		JPanel heatmapPanel = new JPanel() {
-			@Override
-			protected void paintComponent(Graphics g) {
-				super.paintComponent(g);
-				Graphics2D g2 = (Graphics2D) g;
-				// start X,Y coordinates for drawing data
-				int pointX = 0;
-				int pointY = 0;
-				/*
-				 * draw a rectangle for each position of the table and color it with the chosen
-				 * colors
-				 */
-				for (int y = 0; y < table.size() - 1; y++) {
-					for (int x = 10; x < table.get(0).size() - 1; x++) {
-						assignColors(g2, x + 1, y + 1, table);
-						if (!(table.get(y + 1).get(x + 1).equals("."))) {
-							if (table.get(y + 1).get(x + 1).substring(0, 3).equals(syn)) {
-								g2.setColor(color1);
-							}
-							if (table.get(y + 1).get(x + 1).substring(0, 3).equals(nonSyn)) {
-								g2.setColor(color2);
-							}
-						}
-						g2.fillRect(x + pointX - 10, y + pointY, pixel, pixel);
-						pointX = pointX + pixel;
-					}
-
-					// generate genome position labels
-
-					g2.drawString(genomePosition.get(y), table.get(0).size() - 1 + pointX-10, y + pointY + pixel);
-					pointY = pointY + pixel;
-					pointX = 0;
-
-				}
-
-				// generate the samples' name
-
-				// rotate the sample names 90 degrees
-
-				g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
-				g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
-
-				for (int i = 10; i < table.get(0).size() - 1; i++) {
-
-					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel, -(i + pointX - 10));
-					pointX = pointX + pixel;
-				}
-
-			}
-		};
-		heatmapPanel.addMouseMotionListener(new MouseMotionListener() {
-
-			@Override
-			public void mouseMoved(MouseEvent e) {
-				int pointX = 0;
-				int pointY = 0;
-
-				for (int y = 0; y < table.size() - 1; y++) {
-					for (int x = 10; x < table.get(0).size() - 1; x++) {
-						Rectangle rect = new Rectangle();
-						rect.setBounds(x + pointX - 10, y + pointY, pixel, pixel);
-						if (rect.contains(e.getPoint())) {
-							if (!(table.get(y + 1).get(x + 1).equals("."))) {
-								heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>"
-										+ table.get(0).get(x + 1) + "</b>" + "<br>" + "Genome Position:" + "<br>"
-										+ "<b>" + table.get(y + 1).get(10) + "</b>" + "<br>" + "Base substitution:"
-										+ "<br>" + "<b>" + table.get(y + 1).get(x + 1).substring(27, 34) + "</b>"
-										+ "<br>" + "Amino acid substitution:" + "<br>" + "<b>"
-										+ table.get(y + 1).get(x + 1).substring(47, 50) + "</b>" + "</html>");
-							} else if (table.get(y + 1).get(x + 1).equals(".")) {
-								heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>"
-										+ table.get(0).get(x + 1) + "</b>" + "<br>" + "Genome Position:" + "<br>"
-										+ "<b>" + table.get(y + 1).get(10) + "</b>" + "<br>" + "<b>" + "No mutation"
-										+ "</html>");
-							}
-						}
-						pointX += pixel;
-					}
-					pointX = 0;
-					pointY += pixel;
-					ToolTipManager.sharedInstance().mouseMoved(e);
-				}
-
-			}
-
-			@Override
-			public void mouseDragged(MouseEvent e) {
-			}
-
-		});
-
-		return heatmapPanel;
-	}
-
+	
 	// gets the position in the map, searches for the number that correspond to the
 	// position and assign the appropriate color to the graphic
-	public void assignColors(Graphics2D g, int x, int y, ArrayList<ArrayList<String>> table) {
+	public void assignColors(Graphics2D g, int x, int y, ArrayList<ArrayList<String>> table, Color NoM,Color Syn, Color Non, Color Ins, Color Del, Color NoC) {
 
 		String mutation = table.get(y).get(x);
 
 		if (mutation.equals(".")) { // no mutation
-			g.setColor(Color.GRAY);
+			g.setColor(NoM);
 		} else {
 			String[] mutDescription = mutation.split(":");
 			if (mutDescription[0].equals("Syn")) { // synonymous
-				g.setColor(Color.GREEN);
+				g.setColor(Syn);
 			} else if (mutDescription[0].equals("Non")) { // non-synonymous
-				g.setColor(Color.MAGENTA);
+				g.setColor(Non);
 			} else if (mutDescription[0].equals("Ins")) { // insertions
-				g.setColor(Color.YELLOW);
+				g.setColor(Ins);
 			} else if (mutDescription[0].equals("Del")) { // deletions
-				g.setColor(Color.BLACK);
+				g.setColor(Del);
+			}else if (mutDescription[0].equals("NoC")) { // deletions
+				g.setColor(NoC);
 			}
 		}
 

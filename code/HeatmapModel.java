@@ -43,6 +43,7 @@ public class HeatmapModel {
 	ArrayList<String> UKLineage = new ArrayList<String>();
 	ArrayList<ArrayList<String>> table = new ArrayList<ArrayList<String>>();
 	ArrayList<ArrayList<String>> customTable = new ArrayList<ArrayList<String>>();
+	ArrayList<ArrayList<String>> filteredTable;
 
 	// method that creates the file chooser frame and returns the path of the
 	// selected file
@@ -339,6 +340,52 @@ public class HeatmapModel {
 	    	ex.printStackTrace();
 	    }
     }
+	public ArrayList<ArrayList<String>> columnsToKeep(ArrayList<Integer> indexToAddMutT,boolean isSelected1,ArrayList<Integer> indexToAddGL,boolean isSelected2,ArrayList<Integer> indexToAddUKL,boolean isSelected3,
+			ArrayList<Integer> indexToAddRegions,boolean isSelected4,ArrayList<Integer> indexToAddMutN,boolean isSelected5, ArrayList<Integer> indexToAddDateF, boolean isSelected6,
+			ArrayList<Integer> indexToAddDateT,boolean isSelected7,ArrayList<Integer> indexToAddSampleN,boolean isSelected8 ) {
+		ArrayList<Integer> originalInd=new ArrayList<Integer>();
+		filteredTable=new ArrayList<ArrayList<String>>();
+		for(int i =11;i<getTable().get(0).size();i++) {
+			originalInd.add(i);
+		}
+		if(isSelected1) {
+			originalInd.retainAll(indexToAddMutT);
+		}
+		if(isSelected2) {
+			originalInd.retainAll(indexToAddGL);
+		}
+		if(isSelected3) {
+			originalInd.retainAll(indexToAddUKL);
+		}
+		if(isSelected4) {
+			originalInd.retainAll(indexToAddRegions);
+		}
+		if(isSelected5) {
+			originalInd.retainAll(indexToAddMutN);
+		}
+		if(isSelected6) {
+			originalInd.retainAll(indexToAddDateF);
+		}
+		if(isSelected7) {
+			originalInd.retainAll(indexToAddDateT);
+		}
+		if(isSelected8) {
+			originalInd.retainAll(indexToAddSampleN);
+		}
+		for (int j = 0; j < getTable().size(); j++) {
+			ArrayList<String> tempRow = new ArrayList<String>();
+			for (int k = 0; k < 11; k++) {
+				tempRow.add(getTable().get(j).get(k));
+
+			}
+			for (int i : originalInd) {
+				tempRow.add(getTable().get(j).get(i));
+			}
+			filteredTable.add(tempRow);
+
+		}
+		return filteredTable;
+	}
 
 	// getters
 	public ArrayList<String> getCountries() {
@@ -374,3 +421,4 @@ public class HeatmapModel {
 	}
 
 }
+

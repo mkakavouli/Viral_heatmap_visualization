@@ -1,3 +1,4 @@
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
@@ -6,6 +7,8 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
+import java.awt.Stroke;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
@@ -34,6 +37,7 @@ public class HeatmapModel {
 	private FileReader fr;
 	private int sampleNumber, positionNumber;
 	private LocalDate minPastDate, maxDate;
+
 	ArrayList<String> genomePosition = new ArrayList<String>();
 	ArrayList<String> tableLine = new ArrayList<String>();
 	ArrayList<String> samples = new ArrayList<String>();
@@ -45,11 +49,12 @@ public class HeatmapModel {
 	ArrayList<ArrayList<String>> customTable = new ArrayList<ArrayList<String>>();
 	ArrayList<ArrayList<String>> filteredTable;
 
+
 	// method that creates the file chooser frame and returns the path of the
 	// selected file
 	public String selectFile(HeatmapGUI gui) {
 		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setCurrentDirectory(new File("C:\\Users\\ges_k\\OneDrive\\Desktop\\summer project\\VirusHeatmap-master\\"));
+		fileChooser.setCurrentDirectory(new File("C:\\Users\\ges_k\\OneDrive\\Desktop\\summer project\\VirusHeatmap-master\\Case_studies\\"));
 		int result = fileChooser.showOpenDialog(gui);
 		if (result == JFileChooser.APPROVE_OPTION) {
 			File selection = fileChooser.getSelectedFile();
@@ -79,6 +84,13 @@ public class HeatmapModel {
 
 			// store samples'name in ArrayList
 			for (int i = 10; i < table.get(0).size(); i++) {
+				String[] sampleDetails =table.get(0).get(i).split("\\|");
+				
+				if(sampleDetails.length<4) {
+					String temp=table.get(0).get(i)+"|NULL|NULL";
+					table.get(0).set(i,temp);
+					customTable.get(0).set(i,temp);
+				}
 				samples.add(table.get(0).get(i));
 			}
 			samples.remove(0);
@@ -148,46 +160,76 @@ public class HeatmapModel {
 				// start X,Y coordinates for drawing data
 				int pointX = 0;
 				int pointY = 0;
+				int in=0;
 
 				/*
 				 * draw a rectangle for each position of the table and color it with the default
 				 * colors
 				 */
-				Font boldf =new Font("default", Font.BOLD, 22);
+				Font boldf =new Font("default", Font.BOLD, 30);
+				Font boldSmallf =new Font("default", Font.BOLD, 10);
 				Font defaultf=new Font("default",Font.PLAIN,12);
 				g2.setFont(boldf);
-				g2.drawString("Viral Samples", table.get(0).size()*pixel/2,17);
+				g2.drawString("Viral Samples", table.get(0).size()*pixel/2-150,25);
 				g2.setFont(defaultf);
 				for (int y = 0; y < table.size() - 1; y++) {
 					for (int x = 10; x < table.get(0).size() - 1; x++) {
 						assignColors(g2, x + 1, y + 1, table, NoM,Syn,Non,Ins,Del,NoC);
-						g2.fillRect(x + pointX - 10, y + pointY+20, pixel, pixel);
+						g2.fillRect(x + pointX - 10, y + pointY+50, pixel, pixel);
 						pointX = pointX + pixel;
+						if(HeatmapController.isUsed ) {
+						if(HeatmapController.coordinates.containsKey(table.get(y+1).get(x+1))&&in==0) {
+							
+							g2.setPaint(Color.BLACK);
+							g2.setFont(boldSmallf);	
+							g2.drawString(table.get(y+1).get(10),HeatmapController.coordinates.get(table.get(y+1).get(x+1)).get(0)+pointX-10,
+									HeatmapController.coordinates.get(table.get(y+1).get(x+1)).get(1)+pointY+50-pixel/2);
+							
+							g2.setFont(defaultf);
+							in=1;
+							}
+						}
 					}
 
 					// generate genome position labels
 					g2.setPaint(Color.BLACK);
-					g2.drawString(genomePosition.get(y), table.get(0).size() - 1 + pointX-10, y + pointY + pixel+20);
+					g2.drawString(table.get(y + 1).get(10), table.get(0).size() - 1 + pointX-10, y + pointY + pixel+50);
 					pointY = pointY + pixel;
 					pointX = 0;
+					in=0;
 
 				}
-				g2.setFont(boldf);
 				
+				g2.setFont(boldf);
+			
+				
+				if(HeatmapController.searchUsed) {
+					Stroke oldStroke = g2.getStroke();
+					g2.setStroke(new BasicStroke(2));
+					g2.setColor(Color.RED);
+					System.out.println();
+					g2.drawRect(HeatmapController.sampleIndex*(pixel+1), 50, pixel+1,  table.size() - 1 + pointY + pixel-8);
+					g2.setStroke(oldStroke);
+				}
+	
+				g2.setColor(Color.BLACK);
 				g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
 				g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
-				g2.drawString("Nucleotide position- ORF name",table.size()*(pixel+1)/2,-((table.get(0).size() - 1)*(pixel+1)+150));
+				g2.drawString("Nucleotide position- ORF name",table.size()*(pixel+1)/2-150,-((table.get(0).size() - 1)*(pixel+1)+130));
 				g2.setFont(defaultf);
+				
+				
 				// generate the samples' name
 
 //				g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
 //				g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
 
 				for (int i = 10; i < table.get(0).size() - 1; i++) {
-					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel+20, -(i + pointX - 10));
+					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel+50, -(i + pointX - 10));
 					pointX = pointX + pixel;
 				}
-
+				
+				
 			}
 		};
 
@@ -200,10 +242,14 @@ public class HeatmapModel {
 
 				for (int y = 0; y < table.size() - 1; y++) {
 					for (int x = 10; x < table.get(0).size() - 1; x++) {
+	
 						Rectangle rect = new Rectangle();
-						rect.setBounds(x + pointX - 10, y + pointY+20, pixel, pixel);
+						rect.setBounds(x + pointX - 10, y + pointY+50, pixel, pixel);
+						 
 						if (rect.contains(e.getPoint())) {
+						
 							if (!(table.get(y + 1).get(x + 1).equals("."))) {
+							
 								heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>"
 										+ table.get(0).get(x + 1) + "</b>" + "<br>" + "Genome Position:" + "<br>"
 										+ "<b>" + table.get(y + 1).get(10) + "</b>" + "<br>" + "Base substitution:"
@@ -217,12 +263,14 @@ public class HeatmapModel {
 										+ "</html>");
 							}
 						}
+						
 						pointX += pixel;
 					}
 					pointX = 0;
 					pointY += pixel;
 					ToolTipManager.sharedInstance().mouseMoved(e);
 				}
+				
 
 			}
 
@@ -290,12 +338,13 @@ public class HeatmapModel {
 			e.printStackTrace();
 		}
 
+
 	}
 
 	// method that take the given panel and generates a BufferedImage that is saved
 	// as PDF file
 	public void saveImagePDF(JPanel panel) {
-		BufferedImage image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_RGB);
+BufferedImage image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_RGB);
 		
 		panel.paint(image.getGraphics());
 		Document document = new Document();
@@ -342,7 +391,7 @@ public class HeatmapModel {
     }
 	public ArrayList<ArrayList<String>> columnsToKeep(ArrayList<Integer> indexToAddMutT,boolean isSelected1,ArrayList<Integer> indexToAddGL,boolean isSelected2,ArrayList<Integer> indexToAddUKL,boolean isSelected3,
 			ArrayList<Integer> indexToAddRegions,boolean isSelected4,ArrayList<Integer> indexToAddMutN,boolean isSelected5, ArrayList<Integer> indexToAddDateF, boolean isSelected6,
-			ArrayList<Integer> indexToAddDateT,boolean isSelected7,ArrayList<Integer> indexToAddSampleN,boolean isSelected8 ) {
+			ArrayList<Integer> indexToAddDateT,boolean isSelected7,ArrayList<Integer> indexToAddSampleN,boolean isSelected8,ArrayList<Integer> rowsToRemove,boolean isSelected9 ) {
 		ArrayList<Integer> originalInd=new ArrayList<Integer>();
 		filteredTable=new ArrayList<ArrayList<String>>();
 		for(int i =11;i<getTable().get(0).size();i++) {
@@ -383,6 +432,14 @@ public class HeatmapModel {
 			}
 			filteredTable.add(tempRow);
 
+		}
+		
+		if(isSelected9) {
+			int countRemove = 0;
+			for(int i :rowsToRemove) {
+				filteredTable.remove(i-countRemove);
+				countRemove += 1;
+			}
 		}
 		return filteredTable;
 	}

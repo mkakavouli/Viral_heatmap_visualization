@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Vector;
 import javax.swing.JCheckBox;
@@ -35,20 +36,23 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 	private LocalDate fromDate = null;
 	private List regionsList, globalLineageList, UKLineageList;
 	private int pixel = 6;
-	ArrayList<ArrayList<String>> filteredTable;
-	ArrayList<ArrayList<String>> newfilteredTable;
-	ArrayList<ArrayList<String>> clusteredTable;
-	ArrayList<ArrayList<String>> sortedTable;
-
-	ArrayList<Integer> indexToAddMutT,indexToAddGL,indexToAddUKL,indexToAddRegions,indexToAddMutN, indexToAddDateF,indexToAddDateT, indexToAddSampleN ;
-	private boolean isSelected1,isSelected2,isSelected3,isSelected4,isSelected5,isSelected6,isSelected7, isSelected8;
+	private int index=1;
+	public static int sampleIndex;
+	public static boolean isUsed=false;
+	public static boolean searchUsed=false;
+	public static Hashtable<String,ArrayList<Integer> > coordinates;
+	ArrayList<ArrayList<String>> filteredTable,newfilteredTable,clusteredTable,sortedTable;
+	
+	
+	ArrayList<Integer> indexToAddMutT,indexToAddGL,indexToAddUKL,indexToAddRegions,indexToAddMutN, indexToAddDateF,indexToAddDateT, indexToAddSampleN,rowsToRemove ;
+	private boolean isSelected1,isSelected2,isSelected3,isSelected4,isSelected5,isSelected6,isSelected7, isSelected8,isSelected9;
 	 
 
 	public HeatmapController(HeatmapModel model) {
 		modelObject = model;
-		gui = new HeatmapGUI(this);
+		gui = new HeatmapGUI(this,modelObject);
 		clusteringObject = new HeatmapClustering();
-		noMutationColor = Color.GRAY;
+		noMutationColor = Color.LIGHT_GRAY;
 		synColor = Color.GREEN;
 		nonSynColor = Color.MAGENTA;
 		insColor = Color.YELLOW;
@@ -130,6 +134,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			gui.getRightPanel().setVisible(true); // set the panel with filters visible
 
 			gui.revalidate();
+
 
 		} else if (e.getSource() == gui.savePng) {
 			modelObject.saveImage(heatmapPanel); // save the heatmap Panel as png or jpeg
@@ -240,6 +245,35 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 
 			gui.revalidate();
 
+		}else if (e.getSource() == gui.searchSample) {
+			searchUsed=true;
+			newfilteredTable = new ArrayList<ArrayList<String>>();
+			newfilteredTable=modelObject.customTable;
+			if(modelObject.getCustomTable().get(0).size()>11) {
+				if(index==2) {
+					newfilteredTable=clusteringObject.clusterData(modelObject.customTable);
+				}else if(index==3){
+					newfilteredTable=clusteringObject.sortDateData(modelObject.customTable);
+				}
+			}
+			String mutation=gui.searchSample.getText();
+			for (int i = 11; i < newfilteredTable.get(0).size(); i++) {
+				if(mutation.equals(newfilteredTable.get(0).get(i))) {
+					sampleIndex=i-11;
+				}
+			}
+			
+			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor,
+					nonSynColor, insColor, delColor, noCodingColor);
+
+			gui.remove(scrollPane);
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
+					modelObject.customTable.size() * (pixel + 1) + 500));
+			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+
+			gui.revalidate();
 		}else if (e.getSource() == gui.mutNumber) {
 			isSelected5=true;
 			int minNumber = Integer.parseInt(gui.mutNumber.getText());
@@ -247,7 +281,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			newfilteredTable = new ArrayList<ArrayList<String>>();
 			indexToAddMutN = new ArrayList<Integer>();
 			Arrays.fill(countMutations, 0);
-			for (int j = 1; j < modelObject.getTable().size(); j++) {
+			for (int j = 1; j <modelObject.getTable().size(); j++) {
 
 				for (int i = 11; i < modelObject.getTable().get(0).size(); i++) {
 					if (!(modelObject.getTable().get(j).get(i).equals("."))) {
@@ -256,15 +290,73 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 				}
 			}
 			for (int i = 11; i < countMutations.length; i++) {
-				if (countMutations[i] > minNumber) {
+				if (countMutations[i] >= minNumber) {
 					if (!(indexToAddMutN.contains(i))) {
 						indexToAddMutN.add(i);
 					}
 				}
 			}
 
-			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8);
-			// modelObject.getCustomTable().clear();
+			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8,rowsToRemove,isSelected9);
+			if(newfilteredTable.get(0).size()>11) {
+			if(index==2) {
+				newfilteredTable=clusteringObject.clusterData(newfilteredTable);
+			}else if(index==3){
+				newfilteredTable=clusteringObject.sortDateData(newfilteredTable);
+			}
+			}
+			modelObject.setCustomTable(newfilteredTable);
+			/*
+			 * remove the old heatmap Panel and recreate the new one
+			 */
+
+			gui.remove(scrollPane);
+			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
+					insColor, delColor, noCodingColor);
+
+			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + 170,
+					newfilteredTable.size() * (pixel + 1) + 500));
+			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+			gui.revalidate();
+
+		}else if (e.getSource() == gui.mutPerPos) {
+			isSelected9=true;
+			int count=0; 
+			int minNumber = Integer.parseInt(gui.mutPerPos.getText());
+			int[] countMutations = new int[modelObject.getTable().size()];
+			newfilteredTable = new ArrayList<ArrayList<String>>();
+			rowsToRemove = new ArrayList<Integer>();
+			Arrays.fill(countMutations, 0);
+			for (int j = 1; j <modelObject.getTable().size(); j++) {
+
+				for (int i = 11; i < modelObject.getTable().get(0).size(); i++) {
+					if (!(modelObject.getTable().get(j).get(i).equals("."))) {
+						count+=1;
+					}
+				}
+			
+				countMutations[j] = count;
+				count=0;
+			}
+			
+			for (int i = 1; i < countMutations.length; i++) {
+				if (countMutations[i] < minNumber) {
+					if (!(rowsToRemove.contains(i))) {
+						rowsToRemove.add(i);
+					}
+				}
+			}
+
+			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8,rowsToRemove,isSelected9);
+			if(newfilteredTable.get(0).size()>11) {
+			if(index==2) {
+				newfilteredTable=clusteringObject.clusterData(newfilteredTable);
+			}else if(index==3){
+				newfilteredTable=clusteringObject.sortDateData(newfilteredTable);
+			}
+			}
 			modelObject.setCustomTable(newfilteredTable);
 			/*
 			 * remove the old heatmap Panel and recreate the new one
@@ -285,22 +377,27 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			isSelected8=true;
 			int minSampNumber = Integer.parseInt(gui.samplesNumber.getText());
 			int[] countSamples = new int[modelObject.getTable().get(0).size()];
+			Hashtable<String ,Integer> differentMutations= new Hashtable<String,Integer>();
 			newfilteredTable = new ArrayList<ArrayList<String>>();
 			indexToAddSampleN = new ArrayList<Integer>();
 			Arrays.fill(countSamples, 0);
 			for (int j = 1; j < modelObject.getTable().size(); j++) {
-
 				for (int i = 11; i < modelObject.getTable().get(0).size(); i++) {
 					if (!(modelObject.getTable().get(j).get(i).equals("."))) {
-						String mutToCheck=modelObject.getTable().get(j).get(i);
-						
-						while(modelObject.getTable().get(j).contains(mutToCheck)) {
-				
-							countSamples[i] += 1;
+						if(!(differentMutations.containsKey(modelObject.getTable().get(j).get(i)))) {
+							differentMutations.put(modelObject.getTable().get(j).get(i), 1);
+						}else {
+							differentMutations.put(modelObject.getTable().get(j).get(i), differentMutations.get(modelObject.getTable().get(j).get(i)) + 1);
 						}
-						
-						
 					}
+				}
+			}
+			for (int i = 11; i < modelObject.getTable().get(0).size(); i++) {
+				for (int j = 1; j < modelObject.getTable().size(); j++) {
+					if(differentMutations.containsKey(modelObject.getTable().get(j).get(i)) && countSamples[i]<differentMutations.get(modelObject.getTable().get(j).get(i))){
+						countSamples[i]=differentMutations.get(modelObject.getTable().get(j).get(i));
+					}
+					
 				}
 			}
 			for (int i = 11; i < countSamples.length; i++) {
@@ -310,8 +407,14 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					}
 				}
 			}
-			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8);
-			// modelObject.getCustomTable().clear();
+			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8,rowsToRemove,isSelected9);
+			if(newfilteredTable.get(0).size()>11) {
+			if(index==2) {
+				newfilteredTable=clusteringObject.clusterData(newfilteredTable);
+			}else if(index==3){
+				newfilteredTable=clusteringObject.sortDateData(newfilteredTable);
+			}
+			}
 			modelObject.setCustomTable(newfilteredTable);
 			/*
 			 * remove the old heatmap Panel and recreate the new one
@@ -329,10 +432,10 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			gui.revalidate();
 			
 		}else if (e.getSource() == gui.hierarchicalClustered) {
-			clusteredTable = clusteringObject.clusterData(modelObject.getTable());
-			modelObject.getCustomTable().clear();
-			modelObject.setCustomTable(clusteredTable);
-
+			index=2;
+			clusteredTable = clusteringObject.clusterData(modelObject.getCustomTable());
+			
+			
 			gui.remove(scrollPane);
 			heatmapPanel = modelObject.drawData(clusteredTable, pixel, noMutationColor, synColor, nonSynColor, insColor,
 					delColor, noCodingColor);
@@ -345,9 +448,9 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			gui.revalidate();
 
 		} else if (e.getSource() == gui.dateClustered) {
-			sortedTable = clusteringObject.sortDateData(modelObject.getTable());
-			modelObject.getCustomTable().clear();
-			modelObject.setCustomTable(sortedTable);
+			index=3;
+			sortedTable = clusteringObject.sortDateData(modelObject.getCustomTable());
+
 
 			gui.remove(scrollPane);
 			heatmapPanel = modelObject.drawData(sortedTable, pixel, noMutationColor, synColor, nonSynColor, insColor,
@@ -361,9 +464,9 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			gui.revalidate();
 
 		} else if (e.getSource() == gui.nonClustered) {
-
+			index=1;
 			gui.remove(scrollPane);
-			heatmapPanel = modelObject.drawData(modelObject.getTable(), pixel, noMutationColor, synColor, nonSynColor,
+			heatmapPanel = modelObject.drawData(modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8,rowsToRemove,isSelected9), pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor);
 
 			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
@@ -374,19 +477,30 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			gui.revalidate();
 
 		} else if (e.getSource() == gui.resetButton) {
-			noMutationColor = Color.GRAY;
+			noMutationColor = Color.LIGHT_GRAY;
 			synColor = Color.GREEN;
 			nonSynColor = Color.MAGENTA;
 			insColor = Color.YELLOW;
 			delColor = Color.BLACK;
 			noCodingColor = Color.ORANGE;
 			pixel = 6;
+			index=1;
 			modelObject.setCustomTable(modelObject.getTable());
 
 			gui.getMutNumber().setText("");
 			gui.getSamplesNumber().setText("");
 			gui.getWarning1().setText("");
 			gui.getWarning2().setText("");
+			isSelected1=false;
+			isSelected2=false;
+			isSelected3=false;
+			isSelected4=false;
+			isSelected5=false;
+			isSelected6=false;
+			isSelected7=false;
+			isSelected8=false;
+			isSelected9=false;
+			isUsed=false;
 			gui.getCommonMutationSites().setSelected(false);
 			gui.nonClustered.setSelected(true);
 			gui.dateClustered.setSelected(false);
@@ -430,6 +544,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 		} 
 
 	}
+	
+
 
 	@Override
 	public void stateChanged(ChangeEvent e) { // handle the actions when the JSlider is used
@@ -438,6 +554,19 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			pixel = (int) source.getValue(); // store the new pixel value
 			// create the heatmap Panel
 			gui.remove(scrollPane);
+			//newTable = new ArrayList<ArrayList<String>>();
+			if(modelObject.getCustomTable().get(0).size()>11) {
+			if(index==2) {
+			
+				newfilteredTable=clusteringObject.clusterData(modelObject.getCustomTable());
+				modelObject.setCustomTable(newfilteredTable);
+			}else if(index==3){
+			
+				newfilteredTable=clusteringObject.sortDateData(modelObject.getCustomTable());
+				modelObject.setCustomTable(newfilteredTable);
+			}
+			}
+			
 			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel, noMutationColor, synColor,
 					nonSynColor, insColor, delColor, noCodingColor);
 
@@ -482,9 +611,15 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					}
 				}
 			}
-			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8);
+			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8,rowsToRemove,isSelected9);
 			
-			// modelObject.getCustomTable().clear();
+			if(newfilteredTable.get(0).size()>11) {
+			if(index==2) {
+				newfilteredTable=clusteringObject.clusterData(newfilteredTable);
+			}else if(index==3){
+				newfilteredTable=clusteringObject.sortDateData(newfilteredTable);
+			}
+			}
 			modelObject.setCustomTable(newfilteredTable);
 			/*
 			 * remove the old heatmap Panel and recreate the new one
@@ -530,8 +665,14 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 				}
 			}
 		
-			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8);
-			// modelObject.getCustomTable().clear();
+			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8,rowsToRemove,isSelected9);
+			if(newfilteredTable.get(0).size()>11) {
+			if(index==2) {
+				newfilteredTable=clusteringObject.clusterData(newfilteredTable);
+			}else if(index==3){
+				newfilteredTable=clusteringObject.sortDateData(newfilteredTable);
+			}
+			}
 			modelObject.setCustomTable(newfilteredTable);
 			/*
 			 * remove the old heatmap Panel and recreate the new one
@@ -578,9 +719,15 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					}
 				}
 			}
-			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8);
-			
-			// modelObject.getCustomTable().clear();
+			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8,rowsToRemove,isSelected9);
+		
+			if(newfilteredTable.get(0).size()>11) {
+				if(index==2) {
+					newfilteredTable=clusteringObject.clusterData(newfilteredTable);
+				}else if(index==3){
+					newfilteredTable=clusteringObject.sortDateData(newfilteredTable);
+				}
+			}
 			modelObject.setCustomTable(newfilteredTable);
 			/*
 			 * remove the old heatmap Panel and recreate the new one
@@ -615,9 +762,14 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					}
 				}
 			}
-			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8);
-
-			// modelObject.getCustomTable().clear();
+			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8,rowsToRemove,isSelected9);
+			if(newfilteredTable.get(0).size()>11) {
+			if(index==2) {
+				newfilteredTable=clusteringObject.clusterData(newfilteredTable);
+			}else if(index==3){
+				newfilteredTable=clusteringObject.sortDateData(newfilteredTable);
+			}
+			}
 			modelObject.setCustomTable(newfilteredTable);
 			/*
 			 * remove the old heatmap Panel and recreate the new one
@@ -640,7 +792,7 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			if(ukLineage.length==0) {
 				isSelected3=false;
 			}
-			System.out.println(ukLineage.length);
+			
 			newfilteredTable = new ArrayList<ArrayList<String>>();
 			indexToAddUKL = new ArrayList<Integer>();
 			for(int k=0;k<ukLineage.length;k++) {
@@ -653,8 +805,15 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					}
 				}
 			}
-			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8);
-		
+			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8,rowsToRemove,isSelected9);
+			if(newfilteredTable.get(0).size()>11) {
+			if(index==2) {
+				newfilteredTable=clusteringObject.clusterData(newfilteredTable);
+			}else if(index==3){
+				newfilteredTable=clusteringObject.sortDateData(newfilteredTable);
+			}
+			}
+			modelObject.setCustomTable(newfilteredTable);
 
 			/*
 			 * remove the old heatmap Panel and recreate the new one
@@ -689,9 +848,15 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					}
 				}
 			}
-			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8);
-		
-			// modelObject.getCustomTable().clear();
+			newfilteredTable=modelObject.columnsToKeep(indexToAddMutT, isSelected1, indexToAddGL, isSelected2, indexToAddUKL, isSelected3, indexToAddRegions, isSelected4, indexToAddMutN, isSelected5, indexToAddDateF, isSelected6, indexToAddDateT, isSelected7,indexToAddSampleN,isSelected8,rowsToRemove,isSelected9);
+			
+			if(newfilteredTable.get(0).size()>11) {
+			if(index==2) {
+				newfilteredTable=clusteringObject.clusterData(newfilteredTable);
+			}else if(index==3){
+				newfilteredTable=clusteringObject.sortDateData(newfilteredTable);
+			}
+			}
 			modelObject.setCustomTable(newfilteredTable);
 			/*
 			 * remove the old heatmap Panel and recreate the new one
@@ -708,7 +873,74 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
 			gui.revalidate();
 
+		}else if (e.getSource() == gui.getCommonMutationSites()) {
+		
+			newfilteredTable = new ArrayList<ArrayList<String>>();
+			newfilteredTable=modelObject.customTable;
+			if (gui.getCommonMutationSites().isSelected()) {
+				isUsed=true;
+			}else {
+				isUsed=false;
+			}
+			
+			coordinates=new Hashtable<String,ArrayList<Integer>>() ;
+			
+			int consecutiveMut=10;
+			String mutToCheck = null;	
+			
+			int count = 0;
+			if(index==2) {
+				newfilteredTable=clusteringObject.clusterData(modelObject.customTable);
+			}else if(index==3){
+				newfilteredTable=clusteringObject.sortDateData(modelObject.customTable);
+			}
+			for (int j = 1; j <newfilteredTable.size(); j++) {
+				for (int i = 11; i < newfilteredTable.get(0).size(); i++) {
+					
+					String tempMut=modelObject.getTable().get(j).get(i);
+					if(!(tempMut.equals("."))) {
+						if (mutToCheck == null) {
+				        mutToCheck = tempMut;
+				        count = 1;
+					    }else if (!( mutToCheck.equals( tempMut))) {
+					        mutToCheck =tempMut ;
+					        count = 1;
+					        
+					    }else {
+					        ++count;
+					    }
+						if (count>=consecutiveMut && !(coordinates.containsKey(tempMut))){
+							ArrayList<Integer> XYCoord = new ArrayList<Integer>();
+							System.out.println(i-count);
+							XYCoord.add(i-count);
+							XYCoord.add(j);
+							coordinates.put(tempMut,XYCoord);
+						
+						}
+					}
+					
+				}
+				
+				
+			}
+			gui.remove(scrollPane);
+			
+			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
+					insColor, delColor, noCodingColor);
+
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
+					modelObject.customTable.size() * (pixel + 1) + 500));
+			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
+			gui.revalidate();
+			
+		
+			
 		}
 	}
-}
+	
 
+	
+
+}

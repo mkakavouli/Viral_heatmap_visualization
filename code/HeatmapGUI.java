@@ -13,20 +13,22 @@ import com.github.lgooddatepicker.components.DatePickerSettings.DateArea;
 import com.github.lgooddatepicker.demo.FullDemo;
 
 public class HeatmapGUI extends JFrame {
-	private JPanel menuPanel, rightPanel,datePanel,minNumbersPanel,minSamplesPanel,orderingPanel,resetPanel;
+	private JPanel menuPanel, rightPanel,datePanel,minNumbersPanel,minSamplesPanel,minSamplesPerPosPanel,orderingPanel,resetPanel, textfieldPanel;
 	//, sizePanel, ,mutationSites,,,mutationTypPanel,;
 	private JMenuBar fileMenuBar;
-	private JMenu fileMenu, save, colors;
+	private JMenu fileMenu, save, colors,search;
 	public JMenuItem importFile, savePDF, savePng, nonSynColor, synColor,noMutColor,insColor,delColor,noCColor;
-	public JButton dateButton1, dateButton2,resetButton;
+	JTextField searchSample;
+	public JButton dateButton1, dateButton2,resetButton,addButton,clearButton;
 	public JRadioButton nonClustered, hierarchicalClustered, dateClustered;
 	private HeatmapController localController;
+	private HeatmapModel localModel;
 	private DatePicker datePicker1, datePicker2;
 	private DatePickerSettings dateSettings1, dateSettings2;
-	private JLabel datesTo,warning1,warning2,mutTypes;
-	public JTextField mutNumber,samplesNumber;
+	private JLabel datesTo,warning1,warning2,warning3,mutTypes;
+	public JTextField mutNumber,samplesNumber,mutPerPos;
 	private JCheckBox commonMutationSites;
-	public List mutTypeList; 
+	public List mutTypeList,searchedMut; 
 	private JSlider pixelSize;
 	private String[] mutations;
 	
@@ -35,8 +37,10 @@ public class HeatmapGUI extends JFrame {
 	private Hashtable<String, String> mutationsHash;
 
 	// create the JFrame
-	public HeatmapGUI(HeatmapController controller) {
+	public HeatmapGUI(HeatmapController controller,HeatmapModel modelObject) {
+	
 		localController = controller;
+		localModel=modelObject;
 		setLayout(new BorderLayout());
 		setTitle("COVID-19 Nucleotide Mutations");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -57,10 +61,14 @@ public class HeatmapGUI extends JFrame {
 		rightPanel = new JPanel(new GridLayout(0, 1));
 
 		orderingPanel = new JPanel(new GridLayout(0, 1));
+		
+		textfieldPanel = new JPanel(new GridLayout(0, 1));
 
 		minNumbersPanel=new JPanel(new BorderLayout());
 	
 		minSamplesPanel=new JPanel(new BorderLayout());
+		
+		minSamplesPerPosPanel=new JPanel(new BorderLayout());
 	
 		datePanel = new JPanel();
 		
@@ -73,6 +81,11 @@ public class HeatmapGUI extends JFrame {
 		fileMenu = new JMenu("File");
 		save = new JMenu("Save image as");
 		colors = new JMenu("Personalise");
+		search=new JMenu("Search");
+		
+		Rectangle rect = new Rectangle(100, 100, 200, 120);
+		// Specify fill color for Graph object
+		//rect.setFill(Color.GREEN);
 
 		// generate the menu items
 		importFile = new JMenuItem("Import .txt file");
@@ -83,7 +96,14 @@ public class HeatmapGUI extends JFrame {
 		noMutColor = new JMenuItem("No mutation color");
 		insColor= new JMenuItem("Insertions color");
 		delColor= new JMenuItem("Deletions color");
-		noCColor= new JMenuItem("Non-coding mutations color");;
+		noCColor= new JMenuItem("Non-coding mutations color");
+		
+		searchSample= new JTextField(40);
+		searchSample.setText(">hCoV-19/");
+		addButton=new JButton("Add for searching");
+		clearButton=new JButton("Clear selected");
+		searchedMut=new List(10,true);
+		
 
 		// add actionListener in all the menu-items
 		importFile.addActionListener(localController);
@@ -95,6 +115,44 @@ public class HeatmapGUI extends JFrame {
 		insColor.addActionListener(localController);
 		delColor.addActionListener(localController);
 		noCColor.addActionListener(localController);
+		searchSample.addActionListener(localController);
+		addButton.addActionListener(localController);
+		clearButton.addActionListener(localController);
+		
+		//Add a keyListener to implement auto-complete
+		searchSample.addKeyListener(new KeyAdapter(){
+			@Override
+			public void keyReleased(KeyEvent e) {
+			
+				if(!(e.getKeyCode()==KeyEvent.VK_BACK_SPACE||e.getKeyCode()==KeyEvent.VK_DELETE)) {
+		        
+		            String tempText=searchSample.getText();
+		            int length=tempText.length();
+		            
+		            for (int j = 11; j < localModel.customTable.get(0).size(); j++) {
+		            
+		                String dataText="";
+		                for(int i=0;i<length;i++)
+		                {
+		                    if(length<=localModel.customTable.get(0).get(j).length())
+		                    {
+		                        dataText = dataText+localModel.customTable.get(0).get(j).charAt(i);
+		                    }
+		                }
+		                
+		                if(dataText.equals(tempText))
+		                {
+		                    
+		                	searchSample.setText(localModel.customTable.get(0).get(j));
+		                	searchSample.setSelectionStart(length);
+		                	searchSample.setSelectionEnd(localModel.customTable.get(0).get(j).length());
+		                    break;
+		                }
+		            
+		            }
+		        } 
+			}
+		});
 
 		// add the menu-items to the menus
 		save.add(savePDF);
@@ -107,10 +165,16 @@ public class HeatmapGUI extends JFrame {
 		colors.add(insColor);
 		colors.add(delColor);
 		colors.add(noCColor);
+		search.add(searchSample);
+		search.add(addButton);
+		search.add(searchedMut);
+		search.add(clearButton);
+		
 		
 		// add menus to the menubar
 		fileMenuBar.add(fileMenu);
 		fileMenuBar.add(colors);
+		fileMenuBar.add(search);
 		menuPanel.add(fileMenuBar, BorderLayout.WEST);
 
 		//----------------------------------------------------Right Panel------------------------------------------------------//
@@ -167,7 +231,7 @@ public class HeatmapGUI extends JFrame {
 		
 		//create a checkbox to display or not the labels of the common mutation sites
 		commonMutationSites = new JCheckBox("Common mutation sites labels", false);
-		commonMutationSites.addActionListener(localController);
+		commonMutationSites.addItemListener(localController);
 		
 		//add the componens to the ordering panel
 		rightPanel.add(commonMutationSites,BorderLayout.WEST);
@@ -178,18 +242,22 @@ public class HeatmapGUI extends JFrame {
 		JLabel minMutation= new JLabel("Minimum number of mutations/sample:");
 		
 		warning1=new JLabel("");		
-		mutNumber=new JTextField(5);
+		mutNumber=new JTextField(4);
 		
 		/*add a keyListener to the JTextField to 
 		 * display a warning if the user doesn't type a numeric value
 		 */
 		mutNumber.addKeyListener(new KeyAdapter(){
 			@Override
-			public void keyTyped(KeyEvent e) {
+			public void keyPressed(KeyEvent e) {
 				try {
-					if( !(e.getKeyCode() == KeyEvent.VK_ENTER)){
-						int temp=Integer.parseInt(mutNumber.getText()+e.getKeyChar());;
-						warning1.setText("");
+					if( !(e.getKeyCode() == KeyEvent.VK_ENTER )){
+						if( !(mutNumber.getText().isEmpty())){
+							warning1.setText("");
+						}else {
+							int temp=Integer.parseInt(mutNumber.getText()+e.getKeyChar());;
+							warning1.setText("");
+						}
 					}
 				}catch(NumberFormatException ex) {
 					warning1.setForeground (Color.red);
@@ -201,15 +269,15 @@ public class HeatmapGUI extends JFrame {
 
 		mutNumber.addActionListener(localController);
 		
-		rightPanel.add(minMutation);
-		minNumbersPanel.add(mutNumber,BorderLayout.WEST);
+		minNumbersPanel.add(minMutation,BorderLayout.WEST);
+		minNumbersPanel.add(mutNumber,BorderLayout.CENTER);
 		minNumbersPanel.add(warning1,BorderLayout.EAST);
-		rightPanel.add(minNumbersPanel);
+		textfieldPanel.add(minNumbersPanel);
 		
 		//----------------------------minSamplesPanel---------------------------------//
 		
 		JLabel minSamples= new JLabel("Minimum number of samples/mutation:");	
-		samplesNumber=new JTextField(5);
+		samplesNumber=new JTextField(4);
 		warning2=new JLabel("");
 		
 		/*add a keyListener to the JTextField
@@ -219,9 +287,13 @@ public class HeatmapGUI extends JFrame {
 			@Override
 			public void keyTyped(KeyEvent e) {
 				try {
-					if( !(e.getKeyCode() == KeyEvent.VK_ENTER)){
-						int temp=Integer.parseInt(samplesNumber.getText()+e.getKeyChar());;
-						warning2.setText("");
+					if( !(e.getKeyCode() == KeyEvent.VK_ENTER )){
+						if( !(samplesNumber.getText().isEmpty())){
+							warning2.setText("");
+						}else {
+							int temp=Integer.parseInt(samplesNumber.getText()+e.getKeyChar());;
+							warning2.setText("");
+						}
 					}
 				}catch(NumberFormatException ex) {
 					warning2.setForeground (Color.red);
@@ -232,10 +304,48 @@ public class HeatmapGUI extends JFrame {
 		});
 
 		samplesNumber.addActionListener(localController);
-		rightPanel.add(minSamples);
-		minSamplesPanel.add(samplesNumber,BorderLayout.WEST);
+		minSamplesPanel.add(minSamples,BorderLayout.WEST);
+		minSamplesPanel.add(samplesNumber,BorderLayout.CENTER);
 		minSamplesPanel.add(warning2,BorderLayout.EAST);
-		rightPanel.add(minSamplesPanel);
+		textfieldPanel.add(minSamplesPanel);
+		
+		//----------------------------------------minMutationPerPos Panel---------------------------------------//
+		
+		JLabel minMutationPerPos= new JLabel("Minimum number of mutation/genomic position:");
+		
+		warning3=new JLabel("");		
+		mutPerPos=new JTextField(4);
+		
+		/*add a keyListener to the JTextField to 
+		 * display a warning if the user doesn't type a numeric value
+		 */
+		mutPerPos.addKeyListener(new KeyAdapter(){
+			@Override
+			public void keyPressed(KeyEvent e) {
+				try {
+					if( !(e.getKeyCode() == KeyEvent.VK_ENTER && !(mutPerPos.getText().equals("")))){
+						if( !(mutPerPos.getText().isEmpty())){
+							warning3.setText("");
+						}else {
+							int temp=Integer.parseInt(mutPerPos.getText()+e.getKeyChar());;
+							warning3.setText("");
+						}
+					}
+				}catch(NumberFormatException ex) {
+					warning3.setForeground (Color.red);
+					warning3.setText("Invalid format.Please type a numeric value");
+					return;
+				}
+			}
+		});
+
+		mutPerPos.addActionListener(localController);
+		
+		minSamplesPerPosPanel.add( minMutationPerPos,BorderLayout.WEST);
+		minSamplesPerPosPanel.add(mutPerPos,BorderLayout.CENTER);
+		minSamplesPerPosPanel.add(warning3,BorderLayout.EAST);
+		textfieldPanel.add(minSamplesPerPosPanel);
+		rightPanel.add(textfieldPanel);
 		
 		//------------------------------------------mutationTypPanel----------------------------------------------//
 		

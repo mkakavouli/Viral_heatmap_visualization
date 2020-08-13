@@ -400,17 +400,21 @@ public class HeatmapModel {
 		}
 	}
 
-	public void saveFromConsole(Component panel) {
+	public String saveFromConsole(Component panel) {
+		String newFilePath="";
+		int sampleLabelSize=620;
+		int positionLabelSize=170;
 		JPanel heatmap = new JPanel();
 		heatmap.setPreferredSize(
-				new Dimension(getTable().get(0).size() * (8 + 1) + 170, getTable().size() * (8 + 1) + 500));
+				new Dimension(getTable().get(0).size() * (8 + 1) + positionLabelSize, getTable().size() * (8 + 1) + sampleLabelSize));
 		heatmap.add(panel);
 		BufferedImage bImage = ScreenImage.createImage(heatmap);
 		try {
-			ScreenImage.writeImage(bImage, "image.png");
+			newFilePath=ScreenImage.writeImage(bImage, "heatmap.png");
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
+		return newFilePath;
 	}
 
 	public ArrayList<ArrayList<String>> columnsToKeep(ArrayList<Integer> indexToAddMutT, boolean isSelected1,
@@ -540,5 +544,3 @@ public class HeatmapModel {
 	}
 
 }
-
-

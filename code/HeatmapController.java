@@ -36,7 +36,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 	private List regionsList, globalLineageList, UKLineageList;
 	private int pixel = 6;
 	private int index = 1;
-	// public static int[] sampleIndex;
+	private int sampleLabelSize=620;
+	private int positionLabelSize=170;
 	public static int[] posIndex;
 	public static boolean isUsed = false;
 	public static boolean searchUsed = false;
@@ -70,8 +71,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			modelObject.readFile(file);
 			heatmapPanel = modelObject.drawData(modelObject.getTable(), pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor); // draw the heatmap with obtained data
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 
 			/*
 			 * add the heatmap panel to a scrollPane and add the scrollPane to the JFrame
@@ -165,8 +166,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			 * remove the old heatmap Panel and recreate the new one
 			 */
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -190,8 +191,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					insColor, delColor, noCodingColor);
 
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -217,8 +218,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					insColor, delColor, noCodingColor);
 
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -242,8 +243,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					insColor, delColor, noCodingColor);
 
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -267,8 +268,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					insColor, delColor, noCodingColor);
 
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -293,8 +294,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					insColor, delColor, noCodingColor);
 
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -322,8 +323,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					insColor, delColor, noCodingColor);
 
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -352,8 +353,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					insColor, delColor, noCodingColor);
 
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) +sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -392,8 +393,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					insColor, delColor, noCodingColor);
 
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) +sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -435,8 +436,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 					insColor, delColor, noCodingColor);
 
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -490,8 +491,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + 170,
-					newfilteredTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					newfilteredTable.size() * (pixel + 1) +sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -575,8 +576,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + 170,
-					newfilteredTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					newfilteredTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -640,8 +641,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + 170,
-					newfilteredTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					newfilteredTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -657,8 +658,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(clusteredTable, pixel, noMutationColor, synColor, nonSynColor, insColor,
 					delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -674,8 +675,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(sortedTable, pixel, noMutationColor, synColor, nonSynColor, insColor,
 					delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) +sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -695,8 +696,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -741,8 +742,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			 * remove the old heatmap Panel and recreate the new one
 			 */
 			gui.remove(scrollPane);
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.getTable().get(0).size() * (pixel + 1) + 170,
-					modelObject.getTable().size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.getTable().get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.getTable().size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getDatePicker1().removeDateChangeListener(this);
@@ -796,8 +797,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(modelObject.getCustomTable(), pixel, noMutationColor, synColor,
 					nonSynColor, insColor, delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -860,8 +861,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + 170,
-					newfilteredTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					newfilteredTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -918,8 +919,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + 170,
-					newfilteredTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					newfilteredTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -978,8 +979,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + 170,
-					newfilteredTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					newfilteredTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -1025,8 +1026,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + 170,
-					newfilteredTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					newfilteredTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -1074,8 +1075,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + 170,
-					newfilteredTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					newfilteredTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -1122,8 +1123,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + 170,
-					newfilteredTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(newfilteredTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					newfilteredTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);
@@ -1183,8 +1184,8 @@ public class HeatmapController implements ActionListener, ChangeListener, DateCh
 			heatmapPanel = modelObject.drawData(newfilteredTable, pixel, noMutationColor, synColor, nonSynColor,
 					insColor, delColor, noCodingColor);
 
-			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + 170,
-					modelObject.customTable.size() * (pixel + 1) + 500));
+			heatmapPanel.setPreferredSize(new Dimension(modelObject.customTable.get(0).size() * (pixel + 1) + positionLabelSize,
+					modelObject.customTable.size() * (pixel + 1) + sampleLabelSize));
 			scrollPane = new JScrollPane(heatmapPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
 					JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 			gui.getContentPane().add(scrollPane, BorderLayout.CENTER);

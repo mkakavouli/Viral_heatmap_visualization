@@ -132,10 +132,10 @@ public class ScreenImage
 	 *  @param	 fileName name of file to be created
 	 *  @exception IOException if an error occurs during writing
 	*/
-	public static void writeImage(BufferedImage image, String fileName)
+	public static String writeImage(BufferedImage image, String fileName)
 		throws IOException
 	{
-		if (fileName == null) return;
+		if (fileName == null) return fileName;
 
 		int offset = fileName.lastIndexOf( "." );
 
@@ -156,6 +156,7 @@ public class ScreenImage
 			String message = "unknown writer file suffix (" + type + ")";
 			throw new IOException( message );
 		}
+		return fileName;
 	}
 
 	static void layoutComponent(Component component)

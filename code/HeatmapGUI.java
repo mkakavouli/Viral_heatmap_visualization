@@ -1,10 +1,15 @@
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Hashtable;
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
+
 import com.github.lgooddatepicker.components.DatePicker;
 import com.github.lgooddatepicker.components.DatePickerSettings;
 import com.github.lgooddatepicker.demo.FullDemo;
@@ -24,10 +29,11 @@ public class HeatmapGUI extends JFrame {
 	private HeatmapModel localModel;
 	private DatePicker datePicker1, datePicker2;
 	private DatePickerSettings dateSettings1, dateSettings2;
-	private JLabel datesTo, warning1, warning2, warning3, mutTypes;
+	private JLabel date,datesTo, warning1, warning2, warning3, mutTypes;
 	public JTextField mutNumber, samplesNumber, mutPerPos;
 	private JCheckBox commonMutationSites;
 	public List mutTypeList, searchedSamples, searchedPositions;
+	private List regionsList, globalLineageList, UKLineageList;
 	private JSlider pixelSize;
 	private String[] mutations;
 	private JScrollPane scrollPaneHelp;
@@ -40,7 +46,7 @@ public class HeatmapGUI extends JFrame {
 		localController = controller;
 		localModel = modelObject;
 		setLayout(new BorderLayout());
-		setTitle("Viral Consensus sequences visualization");
+		setTitle("Viral consensus sequences visualization");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setup();
 		this.pack();
@@ -49,11 +55,10 @@ public class HeatmapGUI extends JFrame {
 	}
 
 	// setup method generates the main Panels and the buttons
-	/**
-	 * 
-	 */
+	
 	private void setup() {
 		// create panels
+		
 		menuPanel = new JPanel(new BorderLayout());
 
 		welcomePanel = new JPanel();
@@ -76,18 +81,21 @@ public class HeatmapGUI extends JFrame {
 
 		// --------------------------------menuPanel------------------------------------------------//
 
+
 		// generate the menuBar,the menus and sub-menus
+		
 		fileMenuBar = new JMenuBar();
 		fileMenu = new JMenu("File");
 		save = new JMenu("Save image as");
-		colors = new JMenu("Personalise");
+		colors = new JMenu("Colors");
 		search = new JMenu("Search sample(s)");
 		searchP = new JMenu("Search nucleotide position(s)");
 
 		// generate the menu items
+		
 		importFile = new JMenuItem("Import .txt file");
 		savePDF = new JMenuItem("PDF");
-		savePng = new JMenuItem("png/jpeg");
+		savePng = new JMenuItem("PNG/JPEG");
 		synColor = new JMenuItem("Synonumous mutations color");
 		nonSynColor = new JMenuItem("Non-synonumous mutations color");
 		noMutColor = new JMenuItem("No mutation color");
@@ -95,20 +103,23 @@ public class HeatmapGUI extends JFrame {
 		delColor = new JMenuItem("Deletions color");
 		noCColor = new JMenuItem("Non-coding mutations color");
 		help = new JMenuItem("Help");
-
-		searchSample = new JTextField(40);
+		
+		//generate the necessary textfields,buttons and list to search sample and position names
+		
+		searchSample = new JTextField(70);
 		searchSample.setText("");
 		addButton = new JButton("Add for searching");
 		clearButton = new JButton("Clear selected");
-		searchedSamples = new List(10, true);
-
+		searchedSamples = new List(10, true); 
+		
 		searchPosition = new JTextField(40);
 		searchPosition.setText("");
 		addPButton = new JButton("Add for searching");
 		clearPButton = new JButton("Clear selected");
-		searchedPositions = new List(10, true);
+		searchedPositions = new List(10, true); 
 
 		// add actionListener in all the menu-items
+		
 		importFile.addActionListener(localController);
 		savePDF.addActionListener(localController);
 		savePng.addActionListener(localController);
@@ -124,17 +135,30 @@ public class HeatmapGUI extends JFrame {
 		clearPButton.addActionListener(localController);
 		help.addActionListener(localController);
 
-		// Add a keyListener to implement auto-complete
+		// Add keyListeners to implement auto-complete on textfields where the names are typed 
+		
 		searchSample.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyReleased(KeyEvent e) {
+				
+				/*
+				 * the autocomplete works if a key is released which is not 
+				 * 'back_space' or 'delete' or 'left arrow' or 'right arrow'
+				 * (those keys are usually pressed when a user want to change the typed text)
+				 */
+				
+				if (!(e.getKeyCode() == KeyEvent.VK_BACK_SPACE || e.getKeyCode() == KeyEvent.VK_DELETE || e.getKeyCode() ==KeyEvent.VK_LEFT|| e.getKeyCode() ==KeyEvent.VK_RIGHT)) {
 
-				if (!(e.getKeyCode() == KeyEvent.VK_BACK_SPACE || e.getKeyCode() == KeyEvent.VK_DELETE)) {
-
-					String tempText = searchSample.getText();
+					String tempText = searchSample.getText(); //the string typed at each moment someone release a key in searchSample textfield
 					int length = tempText.length();
+					
+					//check the names of the samples displayed at the moment on heatmap plot
 
 					for (int j = 11; j < localModel.customTable.get(0).size(); j++) {
+						
+						/* For each column, create a String by adding to it the characters from the String that corresponds to the sample name,
+						 * the number of characters added should be the length of the text that has been typed
+						 */
 
 						String dataText = "";
 						for (int i = 0; i < length; i++) {
@@ -142,13 +166,12 @@ public class HeatmapGUI extends JFrame {
 								dataText = dataText + localModel.customTable.get(0).get(j).charAt(i);
 							}
 						}
-
+						
+						//if the created String equals to the one typed in the textfield the the text is set with the name of the sample stored in that column of the 2D Arraylist 
 						if (dataText.equals(tempText)) {
-
 							searchSample.setText(localModel.customTable.get(0).get(j));
-							searchSample.setSelectionStart(length);
-							searchSample.setSelectionEnd(localModel.customTable.get(0).get(j).length());
-							break;
+							searchSample.setSelectionStart(length); 
+							break; //when the name is found the loop stops
 						}
 
 					}
@@ -159,40 +182,54 @@ public class HeatmapGUI extends JFrame {
 		searchPosition.addKeyListener(new KeyAdapter() {
 			@Override
 			public void keyReleased(KeyEvent e) {
+				
+				/*
+				 * the autocomplete works if a key is released which is not 
+				 * 'back_space' or 'delete' or 'left arrow' or 'right arrow'
+				 * (those keys are usually pressed when a user want to change the typed text)
+				 */
+				
+				if (!(e.getKeyCode() == KeyEvent.VK_BACK_SPACE || e.getKeyCode() == KeyEvent.VK_DELETE || e.getKeyCode() ==KeyEvent.VK_LEFT|| e.getKeyCode() ==KeyEvent.VK_RIGHT)) {
 
-				if (!(e.getKeyCode() == KeyEvent.VK_BACK_SPACE || e.getKeyCode() == KeyEvent.VK_DELETE)) {
-
-					String tempText = searchPosition.getText();
-					int length = tempText.length();
-
+					String tempText = searchPosition.getText(); //the string typed at each moment someone release a key
+					int length = tempText.length(); 
+					
+					//check the names of the genomic positions displayed at the moment on heatmap plot
+					
 					for (int j = 1; j < localModel.customTable.size(); j++) {
-
+						
+						/* Create a String by adding to it the characters from the String that corresponds to the position name
+						 * the number of characters added should be the length of the text that has been typed
+						 */
+						
 						String dataText = "";
 						for (int i = 0; i < length; i++) {
 							if (length <= localModel.customTable.get(j).get(10).length()) {
-								dataText = dataText + localModel.customTable.get(j).get(10).charAt(i);
+								dataText = dataText + localModel.customTable.get(j).get(10).charAt(i); 
 							}
 						}
-
+						
+						//if the created String equals to the one typed in the textfield the the text is set with the name of the ORF stored in that row of the 2D Arraylist 
 						if (dataText.equals(tempText)) {
 
 							searchPosition.setText(localModel.customTable.get(j).get(10));
 							searchPosition.setSelectionStart(length);
-							searchPosition.setSelectionEnd(localModel.customTable.get(j).get(10).length());
-							break;
+							break; //when the name is found the loop stops
 						}
 
 					}
 				}
 			}
 		});
-
+		
+		// create a non editable textpane added in a scrollPane to display instructions and infos for the user
+		
 		JTextPane helpArea = new JTextPane();
 		helpArea.setPreferredSize(new Dimension(700, 650));
 		helpArea.setBackground(new Color(221, 239, 240));
 		helpArea.setContentType("text/html");
 		helpArea.setText("<html>" + "<p style=\"font-size:110%\"><b>Customization options:</b></>" + "<body>" + "<br>"
-				+ "<p style=\"font-size:100%\"> <u>To change the color of mutations:</u> <br> Click on the menu button <b>'Personalise'</b> and then click on the button with tha name of the mutation you wish to change. <br>"
+				+ "<p style=\"font-size:100%\"> <u>To change the color of mutations:</u> <br> Click on the menu button <b>'Colors'</b> and then click on the button with tha name of the mutation you wish to change. <br>"
 				+ "Default colors: <b>No mutation:</b> light gray/<b>Non-synonymous:</b>Magenta/<b>Synonymous:</b>Green/<b>Deletion:</b>Black/<b>Insertion:</b>Yellow/<b>Non-coding:</b>Orange."
 				+ "<br> <br> <u>To zoom in or out:</u> <br> Use the slide bar, located on the right of the plot. <br> <br>"
 				+ "<u>To change the order of samples being displayed:</u> <br> Click on of the available data ordering options: <b>no ordering,hierchical ordering, date ordering(ascending)</b>. <br> <br>"
@@ -206,10 +243,10 @@ public class HeatmapGUI extends JFrame {
 				+ "<p style=\"font-size:100%\"><u>To filter out the samples with  less mutation than the selected minimum: </u><br>Type a number to the <b>'minimum number of mutations/sample' </b>box at the right of the window and press <b>Enter</b> .<br> "
 				+ "<br><u>To filter out the samples havinng mutations which are present in less than selected minimum number of samples: </u><br>Type a number to the <b>'minimum number of samples/mutation'</b> box at the right of the window and press <b>Enter </b>.<br>"
 				+ "<br><u>To filter out the nucleotide positions with less than selected minimum number of mutations: </u><br>Type a number to the <b>'Minimum number of mutations/genomic position'</b> box at the right of the window and press <b>Enter</b> .<br> "
-				+ "<br><u>To display samples having specific mutation types/region or country/global lineage/Uk lineage </u><br> Click on the desired filters from the corresponding lists.<br>To <b>diselect</b> one of the selected filters, click again on the selected filter you wish to remove."
+				+ "<br><u>To display samples having specific mutation types/region or country/global lineage/Uk lineage </u><br> Click on the desired filters from the corresponding lists.<br>To <b>deselect</b> one of the selected filters, click again on the selected filter you wish to remove."
 				+ "<br><br><u>To display samples collected in specific date range</u><br> Click on the <b>calendars buttons</b> at the right bottom of the window and click on the available dates .</p>"
 				+ "<br><br></b><p style=\"font-size:110%\"><b>Save options:</b><br><br></p>"
-				+ "<p style=\"font-size:100%\">Click on the menu button <b>'File'</b> and  then on <b>'save image as'</b> selected on of the option <b>'Pdf'</b> or <b>'jpeg/png'</b> .</p>"
+				+ "<p style=\"font-size:100%\">Click on the menu button <b>'File'</b> and  then on <b>'save image as'</b> select one of the option <b>'Pdf'</b> or <b>'jpeg/png'</b> .</p>"
 				+ "</body>" +
 
 				"</html>");
@@ -236,6 +273,13 @@ public class HeatmapGUI extends JFrame {
 		searchP.add(addPButton);
 		searchP.add(searchedPositions);
 		searchP.add(clearPButton);
+		
+		//set some of the menus inactive until a file is imported
+		
+		colors.setEnabled(false);
+		search.setEnabled(false);
+		searchP.setEnabled(false);
+		save.setEnabled(false);
 
 		// add menus to the menubar
 		fileMenuBar.add(fileMenu);
@@ -246,6 +290,9 @@ public class HeatmapGUI extends JFrame {
 		menuPanel.add(fileMenuBar, BorderLayout.WEST);
 
 		// ----------------------------------------------------WelcomePanel----------------------------------------------------//
+		
+		// create a non editable text pane to welcome the user and inform him/her about the input file
+		
 		JTextPane welcomeText = new JTextPane();
 		welcomeText.setPreferredSize(new Dimension(1295, 800));
 		welcomeText.setBackground(new Color(221, 239, 240));
@@ -256,16 +303,32 @@ public class HeatmapGUI extends JFrame {
 
 				"<p style=\"font-size:110%\"> <u>To start:</u> <br><br> Click on the menu button <b>'File'</b> and then click on the button <b>'import .txt file'</b>. "
 				+ "<br> <br> For more instructions and information about the program click on <b>'help'</b> button. <br> <br>"
-				+ " <u>File format:</u> <br> <br> A tab delimited txt file following the structure:<br>"
+				+ " <u>File format:</u> <br> <br> A tab delimited txt file produced by " +"<a href=\"https://github.com/rjorton/VAlign\">‘valign_mutations_dnds.py’</a>"+ " script, following the structure:<br>"
 				+ "Position/ORF/ORFPosition/SequencePosition/ReferenceCodonPosition/CodonPosition/ReferenceCodon/ReferenceAA/AAposition/AlignPosition/SampleName_1/.../SampleName_n"
-				+ "<br> <br><b> Samples' name format: </b> >Virus name/Region name/Sample name/Year|GIDSAID ID|Collection date|Global lineage|UK lineage <br> <br>"
-				+ "<b> Mutation format: </b> MutationType:base[ref codon/new codon]:pos[position number]:codon[ref codon/new codon]:dist[1]:aa[ref aa/new aa]:ORF position"
+				+ "<br> <br><b> Samples' name format: </b> >VirusName/RegionName/SampleName/Year|GISAID_ID|GlobalLineage|UK Lineage <br> <br>"
+				+ "<b> Mutation format: </b> MutationType: base[ref base/mut base]: pos[codon position]: codon[ref codon/mut codon]: dist[N]: aa[ref aa/mut aa]: ORFposition"
 				+ "<br><b>Absence of mutation: .</b>" + "</p>" + "<br>" + "</body>" + "</html>");
+		
+		// add a HyperlinkListener to activate the url
+		welcomeText.addHyperlinkListener(new HyperlinkListener() {
+            @Override
+            public void hyperlinkUpdate(HyperlinkEvent e) {
+                if (HyperlinkEvent.EventType.ACTIVATED == e.getEventType()) {
+                    	try {
+							Desktop.getDesktop().browse(e.getURL().toURI());
+						} catch (IOException | URISyntaxException e1) {
+							
+							e1.printStackTrace();
+						}
+                }
+            }
+        });
 		welcomeText.setEditable(false);
 		welcomePanel.add(welcomeText);
 		this.add(welcomePanel, BorderLayout.CENTER);
 
 		// ----------------------------------------------------RightPanel------------------------------------------------------//
+
 
 		// ----------------------------------sizePanel--------------------------------//
 
@@ -336,16 +399,19 @@ public class HeatmapGUI extends JFrame {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				try {
+					// when a key which is not 'Enter' is pressed the text in the textfield is checked 
+					// if it is an integer by trying converting it into Integer
+					
 					if (!(e.getKeyCode() == KeyEvent.VK_ENTER)) {
 						if (!(mutNumber.getText().isEmpty())) {
 							warning1.setText("");
 						} else {
 							int temp = Integer.parseInt(mutNumber.getText() + e.getKeyChar());
-							;
 							warning1.setText("");
 						}
 					}
 				} catch (NumberFormatException ex) {
+					// display a warning message in red color
 					warning1.setForeground(Color.red);
 					warning1.setText("Invalid format.Please type a numeric value");
 					return;
@@ -379,7 +445,6 @@ public class HeatmapGUI extends JFrame {
 							warning2.setText("");
 						} else {
 							int temp = Integer.parseInt(samplesNumber.getText() + e.getKeyChar());
-							;
 							warning2.setText("");
 						}
 					}
@@ -417,7 +482,6 @@ public class HeatmapGUI extends JFrame {
 							warning3.setText("");
 						} else {
 							int temp = Integer.parseInt(mutPerPos.getText() + e.getKeyChar());
-							;
 							warning3.setText("");
 						}
 					}
@@ -441,8 +505,9 @@ public class HeatmapGUI extends JFrame {
 
 		mutTypes = new JLabel("Select mutation type(s):");
 
-		mutations = new String[] { "Non synonymous", "Non coding", "Synonymous", "Insertions", "Deletions" };
+		mutations = new String[] { "Non synonymous", "Non coding", "Synonymous", "Insertions", "Deletions" }; //array with the available mutation types
 		mutTypeList = new List(10, true);
+		
 		// the hashmap connect the text of the JList to the data
 		mutationsHash = new Hashtable<String, String>();
 		mutationsHash.put("Non synonymous", "Non");
@@ -461,8 +526,30 @@ public class HeatmapGUI extends JFrame {
 
 		rightPanel.add(mutTypes);
 		rightPanel.add(mutTypeList);
+		//--------------------------------------------------------------------------------------------//
+		
+		// create empty lists with multiselection options activated
+		// they will be populated after the importation of a file
+		
+		JLabel regionLabel = new JLabel("Select region(s):");
+		regionsList = new List(10, true);
+		regionsList.addItemListener(localController);
+		rightPanel.add(regionLabel);
+		rightPanel.add(regionsList);
+		JLabel globalLineageLabel = new JLabel("Select global Lineage(s):");
+		globalLineageList = new List(10, true);
+		globalLineageList.addItemListener(localController);
+		rightPanel.add(globalLineageLabel);
+		rightPanel.add(globalLineageList);
 
-		// -------------------------------------------------datePanel---------------------------------//
+		JLabel UKLineageLabel = new JLabel("Select UK Lineage(s):");
+		UKLineageList = new List(10, true);
+		UKLineageList.addItemListener(localController);
+		rightPanel.add(UKLineageLabel);
+		rightPanel.add(UKLineageList);
+
+
+		// -------------------------------------------------datePanel--------------------------------------------------//
 
 		// download the image of a calendar
 		URL dateImageURL = FullDemo.class.getResource("/images/datepickerbutton1.png");
@@ -490,30 +577,54 @@ public class HeatmapGUI extends JFrame {
 
 		dateSettings2.setColorBackgroundWeekdayLabels(new Color(100, 149, 237), true);
 		dateSettings2.setColorBackgroundWeekNumberLabels(new Color(100, 149, 237), true);
-
+		
+		
+		date = new JLabel("Select date range:");
 		datesTo = new JLabel("to");
+		
+		//add the datePicker to the datePanel
+		datePanel.add(datePicker1);
+		datePanel.add(datesTo);
+		datePanel.add(datePicker2);
+		
+		//add the label and the datePanel to the rightPanel
+		rightPanel.add(date);
+		rightPanel.add(datePanel);
+		
 
 		// -------------------------------------resetPanel--------------------------------------------------------------//
-
+		
+		//create the reset button and add an ActionListener
 		resetButton = new JButton("reset filters/customization");
 		resetButton.addActionListener(localController);
-		Border button = BorderFactory.createEmptyBorder(0, 10, 0, 10); // the border is needed to put the panel of
-																		// buttons in the right position of the
-																		// BottomRight panel
+		
+		// border to put the resetButton in the right position of the resetPanel
+		Border button = BorderFactory.createEmptyBorder(0, 10, 0, 10); 													
 		resetPanel.setBorder(button);
-
-		JPanel innerPanel = new JPanel(); // create an innerPanel
+		
+		/*
+		 * create an innerPanel in which reset button is added
+		 * to decrease its size
+		 */
+		
+		JPanel innerPanel = new JPanel(); 
 		innerPanel.setLayout(new GridLayout(1, 0));
 		innerPanel.add(resetButton);
+		
+		//add the innerPanel to the resetPanel
 		resetPanel.add(innerPanel);
-
+		
+		rightPanel.add(resetPanel);
+		
+		//---------------------------------------------------------------------------------------------------------------//
 		rightPanel.setVisible(false); // set rightPanel not visible
 
 		// add the panels to JFrame
 		this.add(menuPanel, BorderLayout.NORTH);
 		this.add(rightPanel, BorderLayout.EAST);
 	}
-
+	
+	//getters
 	public JMenuItem getHelp() {
 		return help;
 	}
@@ -554,11 +665,6 @@ public class HeatmapGUI extends JFrame {
 		return datePanel;
 	}
 
-	// getters
-	public JLabel getDatesTo() {
-		return datesTo;
-	}
-
 	public DatePicker getDatePicker1() {
 		return datePicker1;
 	}
@@ -589,6 +695,46 @@ public class HeatmapGUI extends JFrame {
 
 	public JSlider getPixelSize() {
 		return pixelSize;
+	}
+
+	public JMenu getSearch() {
+		return search;
+	}
+
+	public void setSearch(JMenu search) {
+		this.search = search;
+	}
+
+	public JMenu getColors() {
+		return colors;
+	}
+
+	public JMenu getSearchP() {
+		return searchP;
+	}
+
+	public List getRegionsList() {
+		return regionsList;
+	}
+
+	public List getGlobalLineageList() {
+		return globalLineageList;
+	}
+
+	public List getUKLineageList() {
+		return UKLineageList;
+	}
+
+	public JLabel getWarning3() {
+		return warning3;
+	}
+
+	public JTextField getMutPerPos() {
+		return mutPerPos;
+	}
+
+	public JMenu getSave() {
+		return save;
 	}
 
 	public JScrollPane getScrollPaneHelp() {

@@ -1,3 +1,8 @@
+/*
+ * Code source:https://tips4java.wordpress.com/2008/10/13/screen-image/
+ */
+
+
 import java.awt.*;
 import java.awt.image.*;
 import java.io.*;

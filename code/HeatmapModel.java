@@ -34,11 +34,10 @@ import com.itextpdf.text.pdf.PdfWriter;
 
 public class HeatmapModel {
 	private FileReader fr;
-	private int sampleNumber, positionNumber;
 	private LocalDate minPastDate, maxDate;
-	private int[] sampleIndex;
-
-	ArrayList<String> genomePosition = new ArrayList<String>();
+	private int[] sampleIndex,posIndex;
+	private int startColumn=10;
+	
 	ArrayList<String> tableLine = new ArrayList<String>();
 	ArrayList<String> samples = new ArrayList<String>();
 	ArrayList<String> countries = new ArrayList<String>();
@@ -48,9 +47,10 @@ public class HeatmapModel {
 	ArrayList<ArrayList<String>> table = new ArrayList<ArrayList<String>>();
 	ArrayList<ArrayList<String>> customTable = new ArrayList<ArrayList<String>>();
 	ArrayList<ArrayList<String>> filteredTable;
+	
 
 	// method that creates the file chooser frame and returns the path of the
-	// selected file
+	// selected file to import
 	public String selectFile(HeatmapGUI gui) {
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setCurrentDirectory(
@@ -63,70 +63,99 @@ public class HeatmapModel {
 		return "";
 	}
 
-	// method that read the file and store data in ArrayLists
+	// method that reads the file and store data in ArrayLists
 	public void readFile(String path) {
 		try {
-
+			
+			//read file
 			fr = new FileReader(path);
 			Scanner s = new Scanner(fr);
+			
+			//loop continues as long as there is a next line
 			while (s.hasNextLine()) {
 				String line = s.nextLine();
+				
+				// the imported files are tab delimited so the line is split in tabs 
+				// and every value in the line is stored in a arraylist
+				
 				tableLine = new ArrayList<>(Arrays.asList(line.split("\t")));
-
-				sampleNumber = tableLine.size() - 10; // store the number of tableLine
-
-				genomePosition.add(tableLine.get(10)); // store the first column of the file with genome positions
-
+				
+				//the ArrayList of each line is stored in two other Arraylists creating a two 2D Arraylists
+				//the one ArrayList will remain unchanged(table) 
+				//and the other(customTable) will change according to user actions
+				
 				table.add(tableLine);
 				customTable.add(tableLine);
 			}
-			genomePosition.remove(0);
+		
 
-			// store samples'name in ArrayList
-			for (int i = 10; i < table.get(0).size(); i++) {
+			//loop around table to store the sample names
+			
+			for (int i = startColumn+1; i < table.get(0).size(); i++) {
 				String[] sampleDetails = table.get(0).get(i).split("\\|");
-
+				
+				//if the lineage codes are unknown they are set to null to the sample name
+				//and the changed sample name is stored again in the two 2D arrayLists
+				
 				if (sampleDetails.length < 4) {
 					String temp = table.get(0).get(i) + "|NULL|NULL";
 					table.get(0).set(i, temp);
 					customTable.get(0).set(i, temp);
 				}
+				
+				//save the sample name in ArrayList
 				samples.add(table.get(0).get(i));
 			}
-			samples.remove(0);
-
-			// create an ArrayList that stores all the names of the regions by which the
-			// samples come from
+			
+			
 			for (int i = 0; i < samples.size(); i++) {
+				//split the names by '/' to extract region names
+				//split the names by '|' to extract dates and lineage codes (Global and UK)
+				
 				String[] sampleRegion = samples.get(i).split("/");
 				String[] sampleDate = samples.get(i).split("\\|");
-				if (countries.size() == 0) {
+				
+				if (countries.size() == 0) { //if the ArrayList is empty add the region name
 					countries.add(sampleRegion[1]);
 
-				} else if (!(countries.contains(sampleRegion[1]))) {
+				} else if (!(countries.contains(sampleRegion[1]))) { //if the region is not already in the ArrayList add it
 					countries.add(sampleRegion[1]);
 				}
 
-				if (dates.size() == 0) {
+				if (dates.size() == 0) { //if the ArrayList is empty add the date
+					// if date is in YY/M/D format convert it to YY/MM/DD
+					if (sampleDate[2].length()==9) {
+						sampleDate[2]=sampleDate[2].substring(0,5)+"0"+sampleDate[2].substring(5, 9);
+					}else if (sampleDate[2].length()==8) {
+						sampleDate[2]=sampleDate[2].substring(0,5)+"0"+sampleDate[2].substring(5, 7)+"0"+sampleDate[2].substring(7, 8);
+					}
+					//add the date
 					dates.add(sampleDate[2]);
 
-				} else if (!(dates.contains(sampleDate[2]))) {
+				} else if (!(dates.contains(sampleDate[2]))) { //if the date is not already in the ArrayList add it
+					// if date is in YY/M/D format convert it to YY/MM/DD
+					if (sampleDate[2].length()==9) {
+						sampleDate[2]=sampleDate[2].substring(0,5)+"0"+sampleDate[2].substring(5, 9);
+					}else if (sampleDate[2].length()==8) {
+						sampleDate[2]=sampleDate[2].substring(0,5)+"0"+sampleDate[2].substring(5, 7)+"0"+sampleDate[2].substring(7, 8);
+					}
 					dates.add(sampleDate[2]);
 				}
-				if (globalLineage.size() == 0) {
+				if (globalLineage.size() == 0) { //if the ArrayList is empty add the global lineage code
 					globalLineage.add(sampleDate[3]);
 
-				} else if (!(globalLineage.contains(sampleDate[3]))) {
+				} else if (!(globalLineage.contains(sampleDate[3]))) { //if the global Lineage is not already in the ArrayList add it
 					globalLineage.add(sampleDate[3]);
 				}
-				if (UKLineage.size() == 0) {
+				if (UKLineage.size() == 0) { //if the ArrayList is empty add the UK lineage code
 					UKLineage.add(sampleDate[4]);
 
-				} else if (!(UKLineage.contains(sampleDate[4]))) {
+				} else if (!(UKLineage.contains(sampleDate[4]))) { //if the UK lineage code is not already in the ArrayList add it
 					UKLineage.add(sampleDate[4]);
 				}
 			}
-
+			
+			//get the min and max value of the date Arraylist convert it to LocalDate object and save it
 			String min = Collections.min(dates);
 			DateTimeFormatter minFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 			minPastDate = LocalDate.parse(min, minFormatter);
@@ -135,7 +164,6 @@ public class HeatmapModel {
 			DateTimeFormatter maxFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ENGLISH);
 			maxDate = LocalDate.parse(max, maxFormatter);
 
-			positionNumber = table.size() - 1; // store the number of genome positions
 
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
@@ -149,9 +177,12 @@ public class HeatmapModel {
 		}
 	}
 
-	// method that draws the heatmap with the default colors
+	// method that draws the heatmap with the provided colors
 	public JPanel drawData(ArrayList<ArrayList<String>> table, int pixel, Color NoM, Color Syn, Color Non, Color Ins,
 			Color Del, Color NoC) {
+		
+		//the whole heatmap is drawn in a JPanel
+		
 		JPanel heatmapPanel = new JPanel() {
 
 			@Override
@@ -163,14 +194,15 @@ public class HeatmapModel {
 				int pointY = 0;
 				int in = 0;
 
-				/*
-				 * draw a rectangle for each position of the table and color it with the default
-				 * colors
-				 */
+				//create the fonts that will be used in the heatmap plot
+				
 				Font boldf = new Font("default", Font.BOLD, 30);
 				Font boldSmallSamplef = new Font("default", Font.BOLD, 16);
-				Font boldSmallf = new Font("default", Font.BOLD, 10);
+				Font boldSmallf = new Font("default", Font.BOLD, 12);
 				Font defaultf = new Font("default", Font.PLAIN, 12);
+				
+				//if the dataset is smaller use a smaller font for the labels
+				
 				if (table.get(0).size() < 100 || table.size() < 100) {
 					g2.setFont(boldSmallSamplef);
 				} else {
@@ -178,19 +210,33 @@ public class HeatmapModel {
 				}
 				g2.drawString("Viral Samples", (table.get(0).size() - 10) * (pixel + 1) / 2 - 50, 25);
 				g2.setFont(defaultf);
+				
+				/*
+				 * draw a rectangle for each position of the table and color it with the given
+				 * colors
+				 */
 				for (int y = 0; y < table.size() - 1; y++) {
-					for (int x = 10; x < table.get(0).size() - 1; x++) {
+					for (int x = startColumn; x < table.get(0).size() - 1; x++) {
+						
+						// based on mutation type in each position color the rectangles
 						assignColors(g2, x + 1, y + 1, table, NoM, Syn, Non, Ins, Del, NoC);
 						g2.fillRect(x + pointX - 10, y + pointY + 50, pixel, pixel);
 						pointX = pointX + pixel;
+						
+						//if the user wants to display the labels with the common mutation sites
 						if (HeatmapController.isUsed) {
+							
+							//if a mutation at specific row and column is stored coordinate hashTable
+							// draw a string at the coordinates x and y given by the table
+							
 							if (HeatmapController.coordinates.containsKey(table.get(y + 1).get(x + 1)) && in == 0) {
 
 								g2.setPaint(Color.BLACK);
-								g2.setFont(boldSmallf);
+								g2.setFont(boldSmallf);	
 								g2.drawString(table.get(y + 1).get(10),
-										HeatmapController.coordinates.get(table.get(y + 1).get(x + 1)).get(0) + pointX
-												- 10,
+										HeatmapController.coordinates.get(table.get(y + 1).get(x + 1)).get(0)*(pixel+1)
+												- 100
+												,
 										HeatmapController.coordinates.get(table.get(y + 1).get(x + 1)).get(1) + pointY
 												+ 50 - pixel / 2);
 
@@ -212,79 +258,98 @@ public class HeatmapModel {
 
 				g2.setFont(boldf);
 				Stroke oldStroke = g2.getStroke();
-
+				
+				//if the user has used the sample search option red rectangle is drawn
+				//around the index(es)  provided by newSearch method 
+				
 				if (HeatmapController.searchUsed) {
 
-					g2.setStroke(new BasicStroke(2));
+					g2.setStroke(new BasicStroke(2)); //change the line thichness
 					g2.setColor(Color.RED);
 
 					for (int i = 0; i < sampleIndex.length; i++) {
 						g2.drawRect(sampleIndex[i] * (pixel + 1), 50, pixel + 1, table.size() - 1 + pointY + pixel - 8);
+						
 					}
 					g2.setStroke(oldStroke);
 				}
-
+				
+				//if the user has used the position search option red rectangle is drawn
+				//around the index(es)  provided by newSearchRow method 
+				
 				if (HeatmapController.searchPUsed) {
 					g2.setStroke(new BasicStroke(2));
 					g2.setColor(Color.RED);
 
-					for (int i = 0; i < HeatmapController.posIndex.length; i++) {
-						g2.drawRect(0, HeatmapController.posIndex[i] * (pixel + 1) + 50,
+					for (int i = 0; i < posIndex.length; i++) {
+						g2.drawRect(0, posIndex[i] * (pixel + 1) + 50,
 								(table.get(0).size() - 11) * (pixel + 1), pixel + 1);
 					}
 					g2.setStroke(oldStroke);
 				}
-
+				
+				// set the color black and rotate 90 degrees the strings corresponding to y-axis label and sample names
+				
 				g2.setColor(Color.BLACK);
 				g2.translate((HEIGHT - WIDTH) / 2, (HEIGHT - WIDTH) / 2);
 				g2.rotate(Math.PI / 2, HEIGHT / 2, WIDTH / 2);
+				
+				//if the dataset is small use a smaller font
 				if (table.get(0).size() < 100 || table.size() < 100) {
 					g2.setFont(boldSmallSamplef);
 				} else {
 					g2.setFont(boldf);
 				}
-				g2.drawString("Nucleotide position- ORF name", (table.size() - 1) * (pixel + 1) / 2 - 70,
+				
+				g2.drawString("Nucleotide position- ORF name", (table.size() - 1) * (pixel + 1) / 2 - 120,
 						-((table.get(0).size() - 1) * (pixel + 1) + 130));
 				g2.setFont(defaultf);
 
-				// generate the samples' name
+				// draw the samples' name
 
-				for (int i = 10; i < table.get(0).size() - 1; i++) {
+				for (int i = startColumn; i < table.get(0).size() - 1; i++) {
+				
 					g2.drawString(table.get(0).get(i + 1), table.size() - 1 + pointY + pixel + 50, -(i + pointX - 10));
 					pointX = pointX + pixel;
 				}
 
 			}
 		};
-
+		
+		//add ActionListener to display tooltips
 		heatmapPanel.addMouseMotionListener(new MouseMotionListener() {
 
 			@Override
 			public void mouseMoved(MouseEvent e) {
 				int pointX = 0;
 				int pointY = 0;
-
+				
+				//loop around the 2D ArrayList
 				for (int y = 0; y < table.size() - 1; y++) {
-					for (int x = 10; x < table.get(0).size() - 1; x++) {
-
+					for (int x = startColumn; x < table.get(0).size() - 1; x++) {
+						
+						//draw a rectangle based on x and y from the loop with the same dimension the rectangles on heatmap have
 						Rectangle rect = new Rectangle();
 						rect.setBounds(x + pointX - 10, y + pointY + 50, pixel, pixel);
-
+						
+						// if the coordinates provided by mouseListeners are in the new rect 
+						// the tooltip display a text about the mutation stored in the specific x and y in the ArrayList
+						
 						if (rect.contains(e.getPoint())) {
 
 							if (!(table.get(y + 1).get(x + 1).equals("."))) {
 
-								heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>"
+								heatmapPanel.setToolTipText("<html><p width=\"350px\">" + "Sample:" + "<br>" + "<b>"
 										+ table.get(0).get(x + 1) + "</b>" + "<br>" + "Genome Position:" + "<br>"
 										+ "<b>" + table.get(y + 1).get(10) + "</b>" + "<br>" + "Base substitution:"
 										+ "<br>" + "<b>" + table.get(y + 1).get(x + 1).substring(27, 34) + "</b>"
 										+ "<br>" + "Amino acid substitution:" + "<br>" + "<b>"
-										+ table.get(y + 1).get(x + 1).substring(47, 50) + "</b>" + "</html>");
+										+ table.get(y + 1).get(x + 1).substring(47, 50) + "</b>" + "</p></html>");
 							} else if (table.get(y + 1).get(x + 1).equals(".")) {
-								heatmapPanel.setToolTipText("<html>" + "Sample:" + "<br>" + "<b>"
+								heatmapPanel.setToolTipText("<html><p width=\"350px\">" + "Sample:" + "<br>" + "<b>"
 										+ table.get(0).get(x + 1) + "</b>" + "<br>" + "Genome Position:" + "<br>"
 										+ "<b>" + table.get(y + 1).get(10) + "</b>" + "<br>" + "<b>" + "No mutation"
-										+ "</html>");
+										+ "</p></html>");
 							}
 						}
 
@@ -306,7 +371,7 @@ public class HeatmapModel {
 		return heatmapPanel;
 	}
 
-	// gets the position in the map, searches for the number that correspond to the
+	// gets the positions of the ArrayList and finds the mutation type of the
 	// position and assign the appropriate color to the graphic
 	public void assignColors(Graphics2D g, int x, int y, ArrayList<ArrayList<String>> table, Color NoM, Color Syn,
 			Color Non, Color Ins, Color Del, Color NoC) {
@@ -333,14 +398,14 @@ public class HeatmapModel {
 	}
 
 	// method that take the given panel and generates a BufferedImage that is saved
-	// as png or jpeg file
+	// as a png or jpeg file
 	public void saveImage(JPanel panel) {
 		BufferedImage image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_RGB);
 		Graphics2D g2d = image.createGraphics();
-		panel.paint(g2d);
+		panel.paint(g2d); //draw the given Panel to the graphic
 		String extension = null;
 		try {
-			JFileChooser jfc = new JFileChooser();
+			JFileChooser jfc = new JFileChooser();// create a filechooser so the user can chooser the directory where the file will be saved
 			jfc.setAcceptAllFileFilterUsed(false); // disable "all files" extension from the dropdown menu
 			/*
 			 * add the two possible file extensions
@@ -375,11 +440,11 @@ public class HeatmapModel {
 			JFileChooser pdfFileChooser = new JFileChooser(); // create a filechooser so the user can chooser the
 																// directory where the file will be saved
 			pdfFileChooser.setAcceptAllFileFilterUsed(false); // disable "all files" extension from the dropdown menu
-			pdfFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("PDF file", "pdf")); // add the possible
-																									// file extension
+			pdfFileChooser.addChoosableFileFilter(new FileNameExtensionFilter("PDF file", "pdf")); // add the possible file extension
+			
 			int chooserResult = pdfFileChooser.showSaveDialog(null);
 			if (chooserResult == JFileChooser.APPROVE_OPTION) {
-				String filePath = pdfFileChooser.getSelectedFile().getPath() + ".pdf";
+				String filePath = pdfFileChooser.getSelectedFile().getPath() + ".pdf"; //get the path provided by the user and add pdf suffix
 				writer = PdfWriter.getInstance(document, new FileOutputStream(filePath));
 			}
 			document.open();
@@ -399,35 +464,48 @@ public class HeatmapModel {
 			}
 		}
 	}
-
-	public String saveFromConsole(Component panel) {
+	
+	//method that saves an image of the Panel with methods from ScreenImage(source code: https://tips4java.wordpress.com/2008/10/13/screen-image/)
+	public String saveFromConsole(Component panel, int pixel) {
 		String newFilePath="";
 		int sampleLabelSize=620;
-		int positionLabelSize=170;
+		int positionLabelSize=190;
 		JPanel heatmap = new JPanel();
+		
+		//set the size of the Panel based on the size of the dataset
+		
 		heatmap.setPreferredSize(
-				new Dimension(getTable().get(0).size() * (8 + 1) + positionLabelSize, getTable().size() * (8 + 1) + sampleLabelSize));
+				new Dimension(getTable().get(0).size() * (pixel + 1) + positionLabelSize, getTable().size() * (pixel + 1) + sampleLabelSize));
 		heatmap.add(panel);
+		
+		//store the bufferedImage returned by createImage method
 		BufferedImage bImage = ScreenImage.createImage(heatmap);
 		try {
-			newFilePath=ScreenImage.writeImage(bImage, "heatmap.png");
+			newFilePath=ScreenImage.writeImage(bImage, "heatmap.png"); // save the bufferedImage in a PNG file
 		} catch (IOException ex) {
 			ex.printStackTrace();
 		}
 		return newFilePath;
 	}
-
+	
+	//The method gets all the indexes of the columns that fulfill the requirements from the several filters and finds their intersection
 	public ArrayList<ArrayList<String>> columnsToKeep(ArrayList<Integer> indexToAddMutT, boolean isSelected1,
 			ArrayList<Integer> indexToAddGL, boolean isSelected2, ArrayList<Integer> indexToAddUKL, boolean isSelected3,
 			ArrayList<Integer> indexToAddRegions, boolean isSelected4, ArrayList<Integer> indexToAddMutN,
 			boolean isSelected5, ArrayList<Integer> indexToAddDateF, boolean isSelected6,
 			ArrayList<Integer> indexToAddDateT, boolean isSelected7, ArrayList<Integer> indexToAddSampleN,
 			boolean isSelected8, ArrayList<Integer> rowsToRemove, boolean isSelected9) {
+		
 		ArrayList<Integer> originalInd = new ArrayList<Integer>();
 		filteredTable = new ArrayList<ArrayList<String>>();
+		
+		//create a ArrayList containing all the indexes of the original Table 
 		for (int i = 11; i < getTable().get(0).size(); i++) {
 			originalInd.add(i);
 		}
+		
+		//find the intersection of the indexes of the original Table and the indexed of the filters
+		
 		if (isSelected1) {
 			originalInd.retainAll(indexToAddMutT);
 		}
@@ -452,19 +530,27 @@ public class HeatmapModel {
 		if (isSelected8) {
 			originalInd.retainAll(indexToAddSampleN);
 		}
+		
+		//create a filteredTable
 		for (int j = 0; j < getTable().size(); j++) {
 			ArrayList<String> tempRow = new ArrayList<String>();
+			
+			//the first 11 columns remains the same
 			for (int k = 0; k < 11; k++) {
 				tempRow.add(getTable().get(j).get(k));
 
 			}
+			
+			//only the columns with indexes of the intersection are added
 			for (int i : originalInd) {
 				tempRow.add(getTable().get(j).get(i));
 			}
 			filteredTable.add(tempRow);
 
 		}
-
+		
+		//if minimum number per genomic position has been used remove the rows of the filteredTable that doesn't pass the filtering
+		
 		if (isSelected9) {
 			int countRemove = 0;
 			for (int i : rowsToRemove) {
@@ -475,10 +561,12 @@ public class HeatmapModel {
 		return filteredTable;
 	}
 
+	//method that searches for sample name(s) searched by user
 	public void newSearch(List search, ArrayList<ArrayList<String>> table) {
-		String[] sampNames = search.getItems();
+		String[] sampNames = search.getItems(); //get the name(s) written by the user in the textfield
 		int count = 0;
 		sampleIndex = new int[sampNames.length];
+		//for each name typed in the textfield the current table gets searched to find the index of the column in which the name exist
 		for (String j : sampNames) {
 			for (int i = 11; i < table.get(0).size(); i++) {
 
@@ -491,10 +579,30 @@ public class HeatmapModel {
 		}
 
 	}
+	//method that searches for position name(s) searched by user
+	public void newSearchRow(List search, ArrayList<ArrayList<String>> table) {
+		String[] newPosNames = search.getItems(); //get the name(s) written by the user in the textfield
+		int countLabel = 0;
+		posIndex = new int[newPosNames.length];
+		
+		//for each name typed in the textfield the current table gets searched to find the index of the row in which the name exist
+		for (String j : newPosNames) {
+			for (int i = 1; i <table.size(); i++) {
 
-	public void removeHighlight(List search, ArrayList<ArrayList<String>> table) {
+				if (j.equals(table.get(i).get(10))) {
+					posIndex[countLabel] = i - 1;
+				}
+			}
+			countLabel++;
+		}
+
+	}
+	
+	//remove a sample name from the search list if the name is not exist in the current table
+	public void removeHighlightColumn(List search, ArrayList<ArrayList<String>> table) {
 		String[] sampNames = search.getItems();
-
+		
+		//for each name typed in the textfield search if the name still exists in the current table
 		for (String k : sampNames) {
 			boolean isFound = false;
 			for (int j = 11; j < table.get(0).size(); j++) {
@@ -504,23 +612,78 @@ public class HeatmapModel {
 				}
 
 			}
-			if (!(isFound)) {
+			if (!(isFound)) { //if the name is not found, remove it from the search list
 				search.remove(k);
 			}
 		}
 	}
+	
+	//remove a position name from the search list if the name is not exist in the current table
+	public void removeHighlightRow(List search, ArrayList<ArrayList<String>> table) {
+		String[] posNames = search.getItems();
+		
+		//for each name typed in the textfield search if the name still exists in the current table
+		for (String k : posNames) {
+			boolean isFound = false;
+			for (int j = 1; j < table.size(); j++) {
+				if (table.get(j).get(10).contains(k)) {
+					isFound = true;
+					break;
+				}
+
+			}
+			if (!(isFound)) { //if the name is not found, remove it from the search list
+				search.remove(k);
+			}
+		}
+	}
+	
+	//count how many mutations exist per column
+	public int[] countMutationsPerColumn(ArrayList<ArrayList<String>> table, int[] countMutations) {
+		//fill the array corresponds to the count of mutations
+		//in each column with zero
+		
+		Arrays.fill(countMutations, 0);
+		
+		for (int j = 1; j < table.size(); j++) {
+			for (int i = 11; i < table.get(0).size(); i++) {
+				
+				//if the position of the table is not '.' (no mutation) 
+				//increase count by 1
+				if (!(table.get(j).get(i).equals("."))) {
+					countMutations[i] += 1;
+				}
+			}
+		}
+		return countMutations;
+	}
+	
+	//count how many mutations exist per row
+	public int[] countMutationsPerRow(ArrayList<ArrayList<String>> table, int[] countMutations) {
+		int count = 0;
+		//fill the array corresponds to the count of mutations
+		//in each row with zero
+		Arrays.fill(countMutations, 0);
+		for (int j = 1; j < table.size(); j++) {
+
+			for (int i = 11; i <  table.get(0).size(); i++) {
+				//if the position of the table is not '.' (no mutation) 
+				//increase count by 1
+				if (!( table.get(j).get(i).equals("."))) {
+					count += 1;
+				}
+			}
+
+			countMutations[j] = count;
+			count = 0;
+		}
+		return countMutations;
+	}
+	
 
 	// getters
 	public ArrayList<String> getCountries() {
 		return countries;
-	}
-
-	public int getPositionNumber() {
-		return positionNumber;
-	}
-
-	public int getSampleNumber() {
-		return sampleNumber;
 	}
 
 	public ArrayList<ArrayList<String>> getTable() {
